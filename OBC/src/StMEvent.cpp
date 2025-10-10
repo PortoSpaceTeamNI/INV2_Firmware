@@ -11,7 +11,7 @@ extern system_data_t system_data;
 
 bool safe_active_cond(void)
 {
-    if(system_data.pressures.n2o_tank_pressure > filling_params.trigger_pressure || system_data.thermocouples.n2o_tank_uf_t1 < filling_params.trigger_temperature)
+    if(system_data.pressures.n2o_tank_pressure > filling_params.trigger_pressure && system_data.thermocouples.n2o_tank_uf_t1 > filling_params.target_temperature)
     {
         return true;
     }
@@ -20,7 +20,7 @@ bool safe_active_cond(void)
 
 bool safe_inactive_cond(void)
 {
-    if(system_data.pressures.n2o_tank_pressure < filling_params.target_pressure && system_data.thermocouples.n2o_tank_uf_t1 > filling_params.target_temperature)
+    if(system_data.pressures.n2o_tank_pressure < filling_params.target_pressure || system_data.thermocouples.n2o_tank_uf_t1 < filling_params.trigger_temperature)
     {
         return true;
     }
@@ -36,3 +36,4 @@ void exit_safety_vent(void)
 {
     valve_set(VALVE_VENT, VALVE_CLOSE);
 }
+

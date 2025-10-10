@@ -2,7 +2,7 @@
 #define HARDWARE_CFG_H_
 
 const int USB_BAUD_RATE = 115200;
-const int RS485_BAUD_RATE = 9600;
+const int RS485_BAUD_RATE = 57600;
 
 #define ENABLE_RS_PIN 23 // GPIO pin to enable RS485 transceiver
 #define WRITE_RS_PIN 24

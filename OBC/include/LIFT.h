@@ -9,8 +9,9 @@
 #include "Comms.h"
 
 typedef enum {
-    LIFT_FS,
-    LIFT_R,
+    LIFT_TANK = 0,
+    LIFT_BOTTLE,
+    LIFT_THRUST,
     lift_id_count,
 } lift_id_t;
 

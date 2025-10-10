@@ -64,17 +64,17 @@ typedef enum
 
 #define CRC_ENABLED false
 
-#define GROUND_ID 0
 #define OBC_ID 1
 #define HYDRA_UF_ID 2
 #define HYDRA_LF_ID 3
 #define HYDRA_FS_ID 4
 #define NAVIGATOR_ID 5
-#define LIFT_FS_ID 6
-#define LIFT_R_ID 7
+#define LIFT_TANK_ID 6
+#define LIFT_BOTTLE_ID 7
+#define LIFT_THRUST_ID 8
 #define BROADCAST_ID 0xFF
 
-#define DEFAULT_ID HYDRA_FS_ID // Change this for each board
+#define DEFAULT_ID HYDRA_LF_ID // Change this for each board
 
 void write_packet(packet_t *cmd);
 packet_t *read_packet(int *error);

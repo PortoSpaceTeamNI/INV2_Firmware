@@ -3,7 +3,7 @@
 
 // Serial settings
 #define USB_BAUD_RATE 115200
-#define RS485_BAUD_RATE 9600
+#define RS485_BAUD_RATE 57600
 
 #define LOADCELL_POLL_INTERVAL 100  // milliseconds
 

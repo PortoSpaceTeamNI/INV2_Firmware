@@ -113,14 +113,18 @@ int handle_arm_cmd(packet_t *packet, interface_t interface, packet_t *packet_rep
     return CMD_RUN_OK;
 }
 
-int handle_launch_override_cmd(packet_t *packet, interface_t interface, packet_t *packet_rep)
+int handle_fire_cmd(packet_t *packet, interface_t interface, packet_t *packet_rep)
 {
-    // TODO: send command to open main valve
-
+    if (system_data.state != ARMED)
+        return CMD_RUN_STATE_ERROR;
     packet_rep->cmd = CMD_ACK;
     packet_rep->payload_size = 0;
     packet_rep->crc = crc((unsigned char *)packet_rep, packet_rep->payload_size + 3);
     write_packet(packet_rep, interface);
+    
+    close_all_valves();
+    delay(LAUNCH_OVERRIDE_TIMEOUT);
+    valve_set(VALVE_MAIN, VALVE_OPEN);
 
     return CMD_RUN_OK;
 }
@@ -255,6 +259,20 @@ int handle_manual_exec_cmd(packet_t *packet, interface_t interface, packet_t *pa
     return CMD_RUN_OK;
 }
 
+int handle_abort_cmd(packet_t *packet, interface_t interface, packet_t *packet_rep)
+{
+    // Close all valves except vent
+    packet_rep->cmd = CMD_ACK;
+    packet_rep->payload_size = 1;
+    packet_rep->payload[0] = CMD_ABORT;
+    packet_rep->crc = crc((unsigned char *)packet_rep, packet_rep->payload_size + 3);
+    write_packet(packet_rep, interface);
+
+    valve_set(VALVE_ABORT, VALVE_OPEN);
+
+    return CMD_RUN_OK;
+}
+
 int run_command(packet_t *packet, state_t state, interface_t interface)
 {
     // Serial.printf("run command %d\n", cmd->cmd);
@@ -271,14 +289,17 @@ int run_command(packet_t *packet, state_t state, interface_t interface)
     case CMD_ARM:
         return handle_arm_cmd(packet, interface, &packet_rep);
         break;
-    case CMD_LAUNCH_OVERRIDE:
-        return handle_launch_override_cmd(packet, interface, &packet_rep);
+    case CMD_FIRE:
+        return handle_fire_cmd(packet, interface, &packet_rep);
         break;
     case CMD_FILL_EXEC:
         return handle_fill_exec_cmd(packet, interface, &packet_rep);
         break;
     case CMD_MANUAL_EXEC:
         return handle_manual_exec_cmd(packet, interface, &packet_rep);
+        break;
+    case CMD_ABORT:
+        return handle_abort_cmd(packet, interface, &packet_rep);
         break;
     default:
         // if the command has no action it still needs to return ok to change state

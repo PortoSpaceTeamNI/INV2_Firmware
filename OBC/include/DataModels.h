@@ -164,11 +164,12 @@ typedef union
 typedef union {
     struct {
         int16_t n2o_bottle_weight;
+        int16_t main_tank_weight;
         int16_t thrust_loadcell1;
         int16_t thrust_loadcell2;
         int16_t thrust_loadcell3;
     };
-    int16_t raw[4];
+    int16_t raw[5];
 } loadcells_t;
 
 typedef struct

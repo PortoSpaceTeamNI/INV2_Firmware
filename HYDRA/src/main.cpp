@@ -105,7 +105,7 @@ void setup()
 
     setup_error |= pressures_setup();
     setup_error |= thermo_setup();
-    setup_error |= valves_setup();
+    setup_error |= valves_setup(&my_data);
 
     // setup status leds and buzzer
     pinMode(RED_STATUS_PIN, OUTPUT);

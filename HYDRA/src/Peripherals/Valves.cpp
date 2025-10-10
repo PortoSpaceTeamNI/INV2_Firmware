@@ -1,6 +1,7 @@
 #include "Peripherals/Valves.h"
+#include "Comms.h"
 
-int valves_setup(void) {
+int valves_setup(data_t *data) {
     pinMode(SOL_VALVE_1_PIN, OUTPUT);
     pinMode(SOL_VALVE_2_PIN, OUTPUT);
     pinMode(SOL_VALVE_3_PIN, OUTPUT);
@@ -10,14 +11,8 @@ int valves_setup(void) {
     pinMode(ST_VALVE_2_PIN, OUTPUT);
     pinMode(CAM_EN_PIN, OUTPUT);
     pinMode(PWM_SIG_PIN, OUTPUT);
-
-    digitalWrite(SOL_VALVE_1_PIN, LOW);
-    digitalWrite(SOL_VALVE_2_PIN, LOW);
-    digitalWrite(SOL_VALVE_3_PIN, LOW);
-    digitalWrite(QDC_VALVE_1_PIN, LOW);
-    digitalWrite(QDC_VALVE_2_PIN, LOW);
-    digitalWrite(ST_VALVE_1_PIN, LOW);
-    digitalWrite(ST_VALVE_2_PIN, LOW);
+    
+    close_all_valves(data);
     return 0;
 }
 
@@ -32,8 +27,14 @@ void valve_set(data_t *data, uint8_t valve, uint8_t state) {
             data->valve_states.v_quick_dc_2 = state;
             break;
         case VALVE_CONTROLLED_1:
+            if(DEFAULT_ID == HYDRA_LF_ID) {
+            // the abort valve is normally open, so invert the logic
+            digitalWrite(SOL_VALVE_1_PIN, state == 0 ? 1 : 0);
+            data->valve_states.v_controlled_1 = state;
+            } else {
             digitalWrite(SOL_VALVE_1_PIN, state);
             data->valve_states.v_controlled_1 = state;
+            }
             break;
         case VALVE_CONTROLLED_2:
             digitalWrite(SOL_VALVE_2_PIN, state);
@@ -57,5 +58,11 @@ void valve_set(data_t *data, uint8_t valve, uint8_t state) {
         default:
             // Invalid valve
             break;
+    }
+}
+
+void close_all_valves(data_t *data) {
+    for(int i = 0; i < hydra_valve_count; i++) {
+        valve_set(data, i, 0);
     }
 }

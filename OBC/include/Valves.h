@@ -9,5 +9,6 @@
 #define VALVE_CLOSE 0
 
 int valve_set(valve_t valve, int state);
-
+int close_all_valves();
+int close_all_valves_except(valve_t except_valve);
 #endif

@@ -69,11 +69,14 @@ void slaves_setup(void)
     init_hydra(&hydras[HYDRA_FS]);
     hydras[HYDRA_FS].id = HYDRA_FS;
 
-    init_lift(&lifts[LIFT_FS]);
-    lifts[LIFT_FS].id = LIFT_FS;
+    init_lift(&lifts[LIFT_TANK]);
+    lifts[LIFT_TANK].id = LIFT_TANK;
 
-    init_lift(&lifts[LIFT_R]);
-    lifts[LIFT_R].id = LIFT_R;
+    init_lift(&lifts[LIFT_BOTTLE]);
+    lifts[LIFT_BOTTLE].id = LIFT_BOTTLE;
+
+    init_lift(&lifts[LIFT_THRUST]);
+    lifts[LIFT_THRUST].id = LIFT_THRUST;
 }
 
 void sys_data_setup(void)
@@ -125,18 +128,59 @@ void loop()
         */
         bool work_performed = WORK_HANDLER();
 
+        int error;
+        if (millis() - last_slave_poll_time > RS_SLAVE_POLL_INTERVAL) {
+            fetch_next_hydra(hydras, &system_data);
+            last_slave_poll_time = millis();
+        }
+
+        packet_t *slave_packet = read_packet(&error, RS485_INTERFACE);
+        if (slave_packet != NULL && error == CMD_READ_OK)
+        {
+            tone(BUZZER_PIN, 2000, 50);
+            switch(slave_packet->sender_id) {
+                case HYDRA_UF_ID:
+                case HYDRA_LF_ID:
+                case HYDRA_FS_ID:
+                    {
+                        int result = parse_hydra_response(hydras, slave_packet, &system_data);
+                        if (result != 0) {
+                            // log cmd execution error
+                        }
+                    }
+                    break;
+                case LIFT_TANK_ID:
+                case LIFT_BOTTLE_ID:
+                case LIFT_THRUST_ID:
+                    {
+                        int result = parse_lift_response(lifts, slave_packet, &system_data);
+                        if (result != 0) {
+                            // log cmd execution error
+                        }
+                    }
+                    break;
+                default:
+                    // Unknown slave ID
+                    break;
+            }
+        }
+        else if (error != CMD_READ_OK &&
+                 error != CMD_READ_NO_CMD)
+        {
+            // log cmd read error
+            
+        }
         /*
         Event handling
         */
         // if (work_performed) event_state = EVENT_HANDLER();
-        event_state = EVENT_HANDLER();
-        if (event_state == -1)
+        if(slave_packet != NULL && slave_packet->payload_size != 1) event_state = EVENT_HANDLER();
+        if (event_state == S_NONE)
             event_state = system_data.state;
 
         /*
         Comms
         */
-        int error;
 
         // check if we have new data
         // if we get a valid message, execute the command associated to it
@@ -165,6 +209,7 @@ void loop()
             // log cmd read error
             // Serial.printf("READING MESSAGE ERROR %d\n", error);
         }
+
 
         /*
          * Do state transition
@@ -197,54 +242,6 @@ void loop()
                     state_machine[system_data.state].work[i].delay;
 
         }
-
-        if (millis() - last_slave_poll_time > RS_SLAVE_POLL_INTERVAL) {
-            current_slave = (current_slave + 1) % (hydra_id_count + lift_id_count);
-            if(current_slave < hydra_id_count) {
-                fetch_next_hydra(hydras, &system_data);
-                //tone(BUZZER_PIN, 2000, 50);
-            }
-            else {
-                fetch_next_lift(lifts, &system_data);
-                //tone(BUZZER_PIN, 1000, 50);
-            }
-            last_slave_poll_time = millis();
-        }
-
-        packet_t *slave_packet = read_packet(&error, RS485_INTERFACE);
-        if (slave_packet != NULL && error == CMD_READ_OK)
-        {
-            switch(slave_packet->sender_id) {
-                case HYDRA_UF_ID:
-                case HYDRA_LF_ID:
-                case HYDRA_FS_ID:
-                    {
-                        int result = parse_hydra_response(hydras, slave_packet, &system_data);
-                        tone(BUZZER_PIN, 2000, 50);
-                        if (result != 0) {
-                            // log cmd execution error
-                        }
-                    }
-                    break;
-                case LIFT_FS_ID:
-                case LIFT_R_ID:
-                    {
-                        int result = parse_lift_response(lifts, slave_packet, &system_data);
-                        if (result != 0) {
-                            // log cmd execution error
-                        }
-                    }
-                    break;
-                default:
-                    // Unknown slave ID
-                    break;
-            }
-        }
-        else if (error != CMD_READ_OK &&
-                 error != CMD_READ_NO_CMD)
-        {
-            // log cmd read error
-            
-        }
     }
+
 }

@@ -21,11 +21,11 @@ void play_buzzer_error() {
 }
 
 void play_buzzer_success() {
-    /*
+    
     for(int i = 0; i < 3; i++) {
         play_buzzer(2000, 75); 
         delay(150);
     }
-    */
-    success_song(BUZZER_PWM_PIN);
+    
+    //success_song(BUZZER_PWM_PIN);
 }

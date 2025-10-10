@@ -5,11 +5,12 @@
 #include "StateMachine.h"
 #include "StMWork.h"
 #include "StMEvent.h"
-
+#include "Valves.h"
 #include <stdarg.h>
 #include <limits.h>
 
 extern system_data_t system_data;
+
 
 state_t expected_state[state_count][cmd_size] = {
     //                       NONE           STATUS         ABORT  STOP   READY          ARM            FIRE           LAUNCH_OVERRIDE FILL_EXEC      FILL_RESUME    MANUAL_EXEC    ACK
@@ -57,8 +58,8 @@ sm_state_t state_machine[state_count] =
         },
 
         .events = {
-            {.condition = safe_active_cond, .reaction = enter_safety_vent, .next_state = SAFE_IDLE},
-            {.condition = safe_inactive_cond, .reaction = exit_safety_vent, .next_state = SAFE_IDLE},
+            {.condition = safe_active_cond, .reaction = enter_safety_vent, .next_state = S_NONE},
+            {.condition = safe_inactive_cond, .reaction = exit_safety_vent, .next_state = S_NONE},
         },
 
         .next_states = expected_state[SAFE_IDLE],
@@ -176,9 +177,11 @@ sm_state_t state_machine[state_count] =
     // ABORT
     {
         .work = {
+            
         },
 
         .events = {
+            
         },
 
         .next_states = expected_state[ABORT],

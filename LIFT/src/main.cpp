@@ -20,7 +20,7 @@ data_t my_data = {0};
 
 void run_command(packet_t *packet)
 {
-    if (packet->cmd == CMD_STATUS)
+    if (packet->cmd == CMD_STATUS && packet->target_id == DEFAULT_ID)
     {
         // send status packet
         packet_t status_packet;
@@ -41,53 +41,51 @@ void run_command(packet_t *packet)
 void setup()
 {
     memset(&my_data, 0, sizeof(data_t));
-
+    pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(USB_BAUD_RATE); // USBC serial
-    // rs485_init(); // RS-485 serial
-    while (!Serial)
-    {
-        ;
-    }
-    
-    if (sd_init(FLASH_CS_PIN)) {
-        /*
-        sd_log_info("Logger started successfully");
-        sd_log("System online");
-        sd_log_error("Fake error for testing");
-        */
-    }
-
-    sd_list_files();
-    sd_delete_all_files();
-    sd_list_files();
-
+    Serial.println("Setting up...");
+    if(DEFAULT_ID == LIFT_THRUST_ID) {
+        sd_init(FLASH_CS_PIN); // SD card
+    } 
+    rs485_init(); // RS-485 serial
     setup_error |= loadcells_setup(); // change to loadcell setup
-    if (setup_error != 0)
-    {
-        Serial.println("Setup error detected!");
-    }
-    else
-    {
-        Serial.println("Setup complete!");
-    }
+    Serial.println("Setup good");
+    // List all files on SD card
 }
 
 void loop()
 {
-    static unsigned long last_test = 0;
     int error;
-
+    
     // check if we have new data
     // if we get a valid message, execute the command associated to it
-    /* packet_t *packet = read_packet(&error);
+    digitalWrite(LED_BUILTIN, HIGH);
+       
+    packet_t *packet = read_packet(&error);
     if (packet != NULL && error == CMD_READ_OK)
     {
-        // tone(BUZZER_PWM_PIN, 1000, 50); // beep on command receive
         run_command(packet);
+        
     }
-
-    calibrate_loadcells();
+    
     read_sensors(&my_data);
-    //delay(10); // small delay to avoid overwhelming the CPU
+    Serial.print("Loadcells: ");
+    Serial.print(my_data.loadcells.loadcell1);
+    Serial.print(", ");
+    Serial.print(my_data.loadcells.loadcell2);
+    Serial.print(", ");
+    Serial.println(my_data.loadcells.loadcell3);
+    Serial.println();
+    // Write loadcell values to CSV
+    /*
+    char csv_line[256];
+    snprintf(csv_line, sizeof(csv_line), "%lu,%d,%d,%d\n", 
+             millis(), 
+             my_data.loadcells.loadcell1, 
+             my_data.loadcells.loadcell2, 
+             my_data.loadcells.loadcell3);
+    sd_log_raw(csv_line);
+    digitalWrite(LED_BUILTIN, LOW);
     */
+    delay(10);
 }
