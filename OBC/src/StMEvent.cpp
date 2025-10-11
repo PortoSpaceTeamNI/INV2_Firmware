@@ -7,6 +7,7 @@
 #include "Valves.h"
 
 extern filling_params_t filling_params;
+extern flight_params_t flight_params;
 extern system_data_t system_data;
 
 bool safe_active_cond(void)
@@ -22,6 +23,13 @@ bool safe_inactive_cond(void)
 {
     if(system_data.pressures.n2o_tank_pressure < filling_params.target_pressure || system_data.thermocouples.n2o_tank_uf_t1 < filling_params.trigger_temperature)
     {
+        return true;
+    }
+    return false;
+}
+
+bool ignition_ready(void) {
+    if((flight_params.ignition_started == true) && (millis() - flight_params.ignition_begin_time > LAUNCH_OVERRIDE_TIMEOUT)) {
         return true;
     }
     return false;

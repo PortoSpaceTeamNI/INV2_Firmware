@@ -136,7 +136,7 @@ sm_state_t state_machine[state_count] =
         },
 
         .events = {
-
+            {.condition=ignition_ready, .reaction=launch_override, .next_state=LAUNCH}
         },
 
         .next_states = expected_state[IGNITION],

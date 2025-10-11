@@ -47,6 +47,7 @@ lift_t lifts[lift_id_count];
 uint32_t last_slave_poll_time = 0;
 uint8_t current_slave = 0;
 filling_params_t filling_params;
+flight_params_t flight_params;
 
 void sd_setup(void)
 {

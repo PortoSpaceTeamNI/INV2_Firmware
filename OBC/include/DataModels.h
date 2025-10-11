@@ -187,4 +187,9 @@ typedef struct {
     uint16_t target_weight;
 } filling_params_t;
 
+typedef struct {
+    time_t ignition_begin_time;
+    bool ignition_started = false;
+} flight_params_t;
+
 #endif // DATA_MODELS_H

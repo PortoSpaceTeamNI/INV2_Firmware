@@ -12,6 +12,7 @@
 
 extern system_data_t system_data;
 extern filling_params_t filling_params;
+extern flight_params_t flight_params;
 
 extern hydra_t hydras[];
 
@@ -117,14 +118,14 @@ int handle_fire_cmd(packet_t *packet, interface_t interface, packet_t *packet_re
 {
     if (system_data.state != ARMED)
         return CMD_RUN_STATE_ERROR;
+
+    flight_params.ignition_started = true;
+    flight_params.ignition_begin_time = millis();
+
     packet_rep->cmd = CMD_ACK;
     packet_rep->payload_size = 0;
     packet_rep->crc = crc((unsigned char *)packet_rep, packet_rep->payload_size + 3);
     write_packet(packet_rep, interface);
-    
-    close_all_valves();
-    delay(LAUNCH_OVERRIDE_TIMEOUT);
-    valve_set(VALVE_MAIN, VALVE_OPEN);
 
     return CMD_RUN_OK;
 }
