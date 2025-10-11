@@ -29,11 +29,15 @@ bool safe_inactive_cond(void)
 
 void enter_safety_vent(void)
 {
-    valve_set(VALVE_VENT, VALVE_OPEN);
+    if(system_data.actuators.v_vent == VALVE_CLOSE) {
+        valve_set(VALVE_VENT, VALVE_OPEN);
+    }
 }
 
 void exit_safety_vent(void)
 {
-    valve_set(VALVE_VENT, VALVE_CLOSE);
+    if(system_data.actuators.v_vent == VALVE_OPEN) {
+        valve_set(VALVE_VENT, VALVE_CLOSE);
+    }
 }
 
