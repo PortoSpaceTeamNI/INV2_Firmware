@@ -41,19 +41,19 @@ int read_thermocouples(data_t *data)
     if (digitalRead(THERMO1_DRDY_PIN) == LOW)
     {
         float temp1 = maxthermo1.readThermocoupleTemperature();
-        data->thermo1 = (uint16_t)(temp1 * 100);
+        data->thermo1 = (int16_t)(temp1 * 100);
     }
 
     if (digitalRead(THERMO2_DRDY_PIN) == LOW)
     {
         float temp2 = maxthermo2.readThermocoupleTemperature();
-        data->thermo2 = (uint16_t)(temp2 * 100);
+        data->thermo2 = (int16_t)(temp2 * 100);
     }
 
     if (digitalRead(THERMO3_DRDY_PIN) == LOW)
     {
         float temp3 = maxthermo3.readThermocoupleTemperature();
-        data->thermo3 = (uint16_t)(temp3 * 100);
+        data->thermo3 = (int16_t)(temp3 * 100);
     }
     return 0; // Successful read
 }

@@ -45,8 +45,8 @@ typedef union {
 } valve_states_t;
 
 typedef struct {
-    uint16_t thermo1, thermo2, thermo3;
-    uint16_t pressure1, pressure2, pressure3;
+    int16_t thermo1, thermo2, thermo3;
+    int16_t pressure1, pressure2, pressure3;
     valve_states_t valve_states;
     bool cam_enable;
 } data_t;

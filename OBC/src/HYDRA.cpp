@@ -21,7 +21,7 @@ int update_data_from_hydra(hydra_t *hydra, system_data_t *system_data)
         {
         case HYDRA_UF:
             system_data->actuators.v_pressurizing = hydra->data.valve_states.v_controlled_3;
-            system_data->actuators.v_vent = hydra->data.valve_states.v_controlled_1;
+            //system_data->actuators.v_vent = hydra->data.valve_states.v_controlled_1;
             system_data->thermocouples.n2o_tank_uf_t1 = hydra->data.thermo3;
             system_data->thermocouples.n2o_tank_uf_t2 = hydra->data.thermo1;
             system_data->thermocouples.n2o_tank_uf_t3 = hydra->data.thermo2;
@@ -29,21 +29,23 @@ int update_data_from_hydra(hydra_t *hydra, system_data_t *system_data)
         case HYDRA_LF:
             system_data->actuators.v_abort = hydra->data.valve_states.v_controlled_1;
             system_data->actuators.v_main = hydra->data.valve_states.v_controlled_2;
+            system_data->actuators.v_vent = hydra->data.valve_states.v_controlled_3;
             system_data->thermocouples.n2o_tank_lf_t1 = hydra->data.thermo1;
             system_data->thermocouples.n2o_tank_lf_t2 = hydra->data.thermo2;
             system_data->thermocouples.chamber_thermo = hydra->data.thermo3;
             system_data->pressures.n2o_tank_pressure = hydra->data.pressure2;
-            system_data->pressures.chamber_pressure = hydra->data.pressure3;
+            system_data->pressures.chamber_pressure = hydra->data.pressure3 * 2.5f;
             break;
         case HYDRA_FS:
-            system_data->actuators.v_n2o_fill = hydra->data.valve_states.v_controlled_2;
+            //system_data->actuators.v_n2o_fill = hydra->data.valve_states.v_controlled_2;
+            system_data->actuators.v_n2o_fill = hydra->data.valve_states.v_servo;
             system_data->actuators.v_n2o_purge = hydra->data.valve_states.v_controlled_3;
             system_data->actuators.v_n2_fill = hydra->data.valve_states.v_steel_ball_2;
             system_data->actuators.v_n2_purge = hydra->data.valve_states.v_steel_ball_1;
             system_data->actuators.v_n2o_quick_dc = hydra->data.valve_states.v_quick_dc_1;
             system_data->actuators.v_n2_quick_dc = hydra->data.valve_states.v_quick_dc_2;
-            system_data->pressures.n2o_line_pressure = hydra->data.pressure2;
-            system_data->pressures.n2_line_pressure = hydra->data.pressure1;
+            system_data->pressures.n2o_line_pressure = hydra->data.pressure2 * 2.5f;
+            system_data->pressures.n2_line_pressure = hydra->data.pressure1 * 2.5f;
             system_data->pressures.quick_dc_pressure = hydra->data.pressure3;
             system_data->thermocouples.n2o_line_thermo = hydra->data.thermo2;
             break;

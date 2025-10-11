@@ -53,7 +53,17 @@ void valve_set(data_t *data, uint8_t valve, uint8_t state) {
             data->valve_states.v_steel_ball_2 = state;
             break;
         case VALVE_SERVO:
-            // TODO: Implement servo control if needed
+            data->valve_states.v_servo = state;
+            digitalWrite(PWM_SIG_PIN, HIGH);
+            if(state) {
+                // open
+                delayMicroseconds(SERVO_OPEN_PULSE_WIDTH);
+            } else {
+                // close
+                delayMicroseconds(SERVO_CLOSE_PULSE_WIDTH);
+            }
+            digitalWrite(PWM_SIG_PIN, LOW);
+            delay(19);
             break;
         default:
             // Invalid valve

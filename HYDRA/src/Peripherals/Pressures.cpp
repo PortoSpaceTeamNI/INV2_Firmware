@@ -46,7 +46,7 @@ float adc_read_to_bar(int16_t reading) {
     const float VREF    = 5.0f;         // ADC reference voltage
     const float S_MIN_V = 0.5f;         // sensor output at 0 bar
     const float S_SPAN  = 4.0f;         // 4.5 - 0.5 V span
-    const float P_MAX   = 250.0f;       // max pressure (bar)
+    const float P_MAX   = 100.0f;       // max pressure (bar)
 
     // Convert ADC count to voltage
     float voltage = ((float)reading / ADC_MAX) * VREF;

@@ -129,7 +129,6 @@ void loop()
 {
     static unsigned long last_test = 0;
     int error;
-
     // check if we have new data
     // if we get a valid message, execute the command associated to it
     packet_t *packet = read_packet(&error);
