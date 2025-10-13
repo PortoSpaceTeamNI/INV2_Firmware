@@ -248,3 +248,4 @@ static void write_line(const char *level, const char *message) {
 
     log_file.close();
 }
+

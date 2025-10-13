@@ -49,3 +49,8 @@ void exit_safety_vent(void)
     }
 }
 
+void launch_override(void) {
+    if(system_data.actuators.v_main != VALVE_OPEN) {
+        valve_set(VALVE_MAIN, VALVE_OPEN);
+    }
+}

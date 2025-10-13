@@ -7,6 +7,8 @@
 #define MAX_WORK_SIZE 15
 #define MAX_EVENT_SIZE 10
 
+#define LAUNCH_OVERRIDE_TIMEOUT 12000 // milliseconds
+
 #define ARM_TIMER_TRIGGER 60
 
 #define MOTOR_BURN_TIMER_TRIGGER 82 //0.1sec 

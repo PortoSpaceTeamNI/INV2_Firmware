@@ -8,18 +8,11 @@
 #define LIFT_THRUST_SCK2_PIN 8
 #define LIFT_THRUST_DOUT3_PIN 15
 #define LIFT_THRUST_SCK3_PIN 14
-#define LIFT_TANK_DOUT_PIN 15 
-#define LIFT_TANK_SCK_PIN 14
 
-#define FLASH_CS_PIN 17
-
-//* STATUS
-#define RED_STATUS_PIN 0
-#define GREEN_STATUS_PIN 1
-#define BUZZER_PWM_PIN 2
+#define SD_CS_PIN 17
 
 //* RS-485
-#define WRITE_RS_PIN 8
-#define READ_RS_PIN 9
+#define WRITE_RS_PIN 0
+#define READ_RS_PIN 1
 
 #endif  // IO_MAP_H

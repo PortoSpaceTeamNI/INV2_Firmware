@@ -44,10 +44,8 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(USB_BAUD_RATE); // USBC serial
     Serial.println("Setting up...");
-    if(DEFAULT_ID == LIFT_THRUST_ID) {
-        sd_init(FLASH_CS_PIN); // SD card
-    } 
-    rs485_init(); // RS-485 serial
+    sd_init(SD_CS_PIN); // SD card
+    //rs485_init(); // RS-485 serial
     setup_error |= loadcells_setup(); // change to loadcell setup
     Serial.println("Setup good");
     // List all files on SD card
@@ -60,14 +58,14 @@ void loop()
     // check if we have new data
     // if we get a valid message, execute the command associated to it
     digitalWrite(LED_BUILTIN, HIGH);
-       
+    /*
     packet_t *packet = read_packet(&error);
     if (packet != NULL && error == CMD_READ_OK)
     {
         run_command(packet);
         
     }
-    
+    */
     read_sensors(&my_data);
     Serial.print("Loadcells: ");
     Serial.print(my_data.loadcells.loadcell1);
@@ -76,8 +74,8 @@ void loop()
     Serial.print(", ");
     Serial.println(my_data.loadcells.loadcell3);
     Serial.println();
+    
     // Write loadcell values to CSV
-    /*
     char csv_line[256];
     snprintf(csv_line, sizeof(csv_line), "%lu,%d,%d,%d\n", 
              millis(), 
@@ -86,6 +84,4 @@ void loop()
              my_data.loadcells.loadcell3);
     sd_log_raw(csv_line);
     digitalWrite(LED_BUILTIN, LOW);
-    */
-    delay(10);
 }

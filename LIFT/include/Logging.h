@@ -24,7 +24,6 @@ bool sd_get_last_filename(char *buffer, size_t size);
 void sd_list_files(void);                         
 bool sd_read_file(const char *filename);
 bool sd_delete_file(const char *filename);   
-void sd_delete_all_files(void);              
-
+void sd_delete_all_files(void);    
 
 #endif // LOGGING_H

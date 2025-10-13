@@ -2,6 +2,7 @@
 #define DATA_MODELS_H_
 
 #include <stdint.h>
+#include <Arduino.h>
 
 //use the enum below as the values of state_t
 //use -1 for default behavior
