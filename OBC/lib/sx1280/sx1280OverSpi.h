@@ -281,7 +281,7 @@ class sx1280OverSpi{
     void begin( );
     void sx1280Select( );
     void sx1280Deselect( );
-    void sx1280Reset( );
+        void sx1280Reset( );
 
     void zeroingAnArray( uint8_t arrayToZero[], 
                          uint16_t arrayLength );

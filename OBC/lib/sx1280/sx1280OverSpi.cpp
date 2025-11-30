@@ -21,7 +21,9 @@ void sx1280OverSpi::begin( ){
 
     pinMode( sx1280CssPin, OUTPUT );
     pinMode( sx1280BusyPin, INPUT );
-    pinMode( sx1280ResetPin, OUTPUT );
+    if (sx1280ResetPin != 255) {
+        pinMode( sx1280ResetPin, OUTPUT );
+    }
 
 }
 
@@ -44,7 +46,10 @@ void sx1280OverSpi::sx1280Deselect(){
 }
 
 void sx1280OverSpi::sx1280Reset( ){
-
+    if (sx1280ResetPin == 255) {
+        // Module has no accessible reset pin; skip
+        return;
+    }
     digitalWrite( sx1280ResetPin, 0 ); /* Resetting sx1280 during startup */
     asm volatile ("nop \n nop \n nop");
     digitalWrite( sx1280ResetPin, 1 );
