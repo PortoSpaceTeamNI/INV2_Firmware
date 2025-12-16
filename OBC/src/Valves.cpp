@@ -34,10 +34,10 @@ int valve_set(valve_t valve, int state)
         set_hydra_valve(&hydras[HYDRA_FS], H_VALVE_QUICK_DC_1, state);
         break;
     case VALVE_PRESSURIZING:
-        set_hydra_valve(&hydras[HYDRA_UF], H_VALVE_CONTROLLED_3, state);
+        set_hydra_valve(&hydras[HYDRA_LF], H_VALVE_CONTROLLED_3, state);
         break;
     case VALVE_VENT:
-        set_hydra_valve(&hydras[HYDRA_LF], H_VALVE_CONTROLLED_3, state);
+        set_hydra_valve(&hydras[HYDRA_UF], H_VALVE_CONTROLLED_1, state);
         break;
     default:
         // valve not defined

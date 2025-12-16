@@ -49,6 +49,8 @@ uint8_t current_slave = 0;
 filling_params_t filling_params;
 flight_params_t flight_params;
 
+bool slave_request_pending = false;
+
 void sd_setup(void)
 {
     // TODO: Setup SD card
@@ -138,7 +140,7 @@ void loop()
         packet_t *slave_packet = read_packet(&error, RS485_INTERFACE);
         if (slave_packet != NULL && error == CMD_READ_OK)
         {
-            tone(BUZZER_PIN, 2000, 50);
+            //tone(BUZZER_PIN, 2000, 50);
             switch(slave_packet->sender_id) {
                 case HYDRA_UF_ID:
                 case HYDRA_LF_ID:
@@ -164,6 +166,11 @@ void loop()
                     // Unknown slave ID
                     break;
             }
+            slave_request_pending = false;
+            //Serial.println("Time taken for slave poll: " + String(millis() - last_slave_poll_time) + " ms");
+            fetch_next_hydra(hydras, &system_data);
+            last_slave_poll_time = millis();
+
         }
         else if (error != CMD_READ_OK &&
                  error != CMD_READ_NO_CMD)
