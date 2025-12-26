@@ -5,13 +5,14 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include <iostream>
 
 #include "Comms.h"
 #include "DataModels.h"
 #include "HardwareCfg.h"
 #include "Peripherals/IO_Map.h"
+#include "Peripherals/Buzzer.h"
 #include "bmp5_defs.h"
-#include "bmp5.c"
 #include "bmp5.h"
 #include "Peripherals/bmp581.h"
 
@@ -19,29 +20,21 @@
 #define BMP581_I2C_ADDR 0x76  // 0x76 LOW ; 0x77 HIGH
 
 void setup() {
-  Serial.begin(115200); // Start serial communication
+  Serial.begin(9600); // Start serial communication
 
-  // Initialize I2C
-  Wire1.setSDA(I2C_SDA_PIN0);  // Set SDA pin
-  Wire1.setSCL(I2C_SCL_PIN0);  // Set SCL pin
-  Wire1.begin();  // Start the I2C communication
+  setup_buzzer();
 
-  // Initialize BMP581
-  int8_t status = bmp5_init(&bmp581_dev);
-  if (status != 0) {
-    Serial.println("Failed to initialize BMP581 sensor.");
-    return;
+  delay(2000);
+  Serial.println("Starting Setup...");
+
+    // Use the bmp_setup() function from bmp.cpp
+  if (bmp_setup() == 0) {
+    Serial.println("Setup complete!");
+    play_buzzer_success();
+  } else {
+    Serial.println("Setup failed!");
+    play_buzzer_error();
   }
-  Serial.println("BMP581 initialized successfully.");
-
-  // Set BMP581 to normal power mode
-  status = bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp581_dev);
-  if (status != 0) {
-    Serial.println("Failed to set BMP581 power mode.");
-    return;
-  }
-
-  // Set up other pins as needed (if necessary for your application)
 }
 
     void loop() {

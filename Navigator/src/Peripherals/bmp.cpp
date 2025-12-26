@@ -2,32 +2,88 @@
 
 #include "Peripherals/bmp581.h"
 #include "Peripherals/IO_Map.h"
+#include "Peripherals/Buzzer.h"
 #include "DataModels.h"
 #include <Wire.h>
 
 struct bmp5_dev bmp581_dev;
 
-int bmp_setup(void) {
-
-    pinMode(BAR2_RDY, INPUT); 
-    Wire1.setSDA(I2C_SDA_PIN0);  // Set SDA pin
-    Wire1.setSCL(I2C_SCL_PIN0);  // Set SCL pin
-    Wire1.begin();  // Start the I2C communication
+BMP5_INTF_RET_TYPE bmp5_i2c_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr) {
+    uint8_t dev_addr = *(uint8_t*)intf_ptr;
     
-    int8_t status = bmp5_init(&bmp581_dev);
-    if (status != 0) {
-        Serial.println("Failed to initialize BMP581 sensor.");
-        return -1;  
+    Wire.beginTransmission(dev_addr);
+    Wire.write(reg_addr);
+    if (Wire.endTransmission(false) != 0) {
+        return -1;
     }
+    
+    Wire.requestFrom(dev_addr, (uint8_t)len);
+    for (uint32_t i = 0; i < len; i++) {
+        reg_data[i] = Wire.read();
+    }
+    
+    return 0;
+}
 
-    status = bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp581_dev);  // Set sensor to normal mode
-    if (status != 0) {
-        Serial.println("Failed to set BMP581 power mode.");
+// I2C write callback for BMP5 library
+BMP5_INTF_RET_TYPE bmp5_i2c_write(uint8_t reg_addr, const uint8_t *reg_data, uint32_t len, void *intf_ptr) {
+    uint8_t dev_addr = *(uint8_t*)intf_ptr;
+    
+    Wire.beginTransmission(dev_addr);
+    Wire.write(reg_addr);
+    Wire.write(reg_data, len);
+    
+    return (Wire.endTransmission() == 0) ? 0 : -1;
+}
+
+// Delay callback for BMP5 library
+void bmp5_delay_us(uint32_t period, void *intf_ptr) {
+    delayMicroseconds(period);
+}
+
+int bmp_setup(void) {
+    pinMode(BAR2_RDY, INPUT);
+    
+    Wire.setSDA(I2C_SDA_PIN0);
+    Wire.setSCL(I2C_SCL_PIN0);
+    Wire.begin();
+    delay(100);
+    
+    // Configure BMP581 device structure BEFORE calling bmp5_init
+    bmp581_dev.chip_id = BMP5_CHIP_ID_PRIM;
+    bmp581_dev.intf = BMP5_I2C_INTF;
+    bmp581_dev.read = bmp5_i2c_read;
+    bmp581_dev.write = bmp5_i2c_write;
+    bmp581_dev.delay_us = bmp5_delay_us;
+    
+    static uint8_t dev_addr = 0x46;
+    bmp581_dev.intf_ptr = &dev_addr;
+    
+    Serial.println("Calling bmp5_init...");
+    int8_t status = bmp5_init(&bmp581_dev);
+    Serial.print("Init status: ");
+    Serial.println(status);
+    
+    if (status != 0 && status != -5) {
+        Serial.println("Failed to initiate BMP5");
+        play_buzzer_error();
         return -1;
     }
 
-    Serial.println("BMP581 initialized successfully.");
-    return 0; 
+    if (status == -5) {
+        Serial.println("Warning: Soft reset failed, but continuing...");
+    }
+    
+    status = bmp5_set_power_mode(BMP5_POWERMODE_NORMAL, &bmp581_dev);
+    if (status != 0) {
+        Serial.println("Failed to set power mode");
+        play_buzzer_error();
+        return -1;
+    }
+    
+    Serial.println("BMP581 initialized!");
+    play_buzzer_success();
+    return 0;
 }
 
 int read_baro2(data_t *data) {
