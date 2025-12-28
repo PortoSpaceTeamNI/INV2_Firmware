@@ -134,7 +134,6 @@ void loop()
     packet_t *packet = read_packet(&error);
     if (packet != NULL && error == CMD_READ_OK)
     {
-        //tone(BUZZER_PWM_PIN, 1000, 50); // beep on command receive
         run_command(packet);
     }
 

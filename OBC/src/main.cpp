@@ -134,6 +134,7 @@ void loop()
         int error;
         if (millis() - last_slave_poll_time > RS_SLAVE_POLL_INTERVAL) {
             fetch_next_hydra(hydras, &system_data);
+            tone(BUZZER_PIN, 1000, 20);
             last_slave_poll_time = millis();
         }
 
@@ -166,7 +167,6 @@ void loop()
                     // Unknown slave ID
                     break;
             }
-            slave_request_pending = false;
             //Serial.println("Time taken for slave poll: " + String(millis() - last_slave_poll_time) + " ms");
             fetch_next_hydra(hydras, &system_data);
             last_slave_poll_time = millis();
