@@ -16,18 +16,12 @@
 #include "bmp5.h"
 #include "Peripherals/bmp581.h"
 
-// BMP581 I2C Address
-#define BMP581_I2C_ADDR 0x76  // 0x76 LOW ; 0x77 HIGH
-
 void setup() {
   Serial.begin(9600); // Start serial communication
 
   setup_buzzer();
-
-  delay(2000);
   Serial.println("Starting Setup...");
 
-    // Use the bmp_setup() function from bmp.cpp
   if (bmp_setup() == 0) {
     Serial.println("Setup complete!");
     play_buzzer_success();
@@ -37,7 +31,7 @@ void setup() {
   }
 }
 
-    void loop() {
+void loop() {
     // Read sensor data
     bmp5_sensor_data sensor_data;
     bmp5_osr_odr_press_config osr_odr_press_cfg;

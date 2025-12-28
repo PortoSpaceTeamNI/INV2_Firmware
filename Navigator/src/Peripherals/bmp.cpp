@@ -1,11 +1,13 @@
-// src >> Peripherals >> bmp.cpp
-
 #include "Peripherals/bmp581.h"
 #include "Peripherals/IO_Map.h"
 #include "Peripherals/Buzzer.h"
 #include "DataModels.h"
 #include <Wire.h>
 
+// BMP581 I2C Address
+#define BMP581_I2C_ADDR 0x46
+
+// BMP581 device structure
 struct bmp5_dev bmp581_dev;
 
 BMP5_INTF_RET_TYPE bmp5_i2c_read(uint8_t reg_addr, uint8_t *reg_data, uint32_t len, void *intf_ptr) {
@@ -41,6 +43,7 @@ void bmp5_delay_us(uint32_t period, void *intf_ptr) {
     delayMicroseconds(period);
 }
 
+// BMP581 setup
 int bmp_setup(void) {
     pinMode(BAR2_RDY, INPUT);
     
@@ -49,14 +52,14 @@ int bmp_setup(void) {
     Wire.begin();
     delay(100);
     
-    // Configure BMP581 device structure BEFORE calling bmp5_init
+    // Configure BMP581 device structure
     bmp581_dev.chip_id = BMP5_CHIP_ID_PRIM;
     bmp581_dev.intf = BMP5_I2C_INTF;
     bmp581_dev.read = bmp5_i2c_read;
     bmp581_dev.write = bmp5_i2c_write;
     bmp581_dev.delay_us = bmp5_delay_us;
     
-    static uint8_t dev_addr = 0x46;
+    static uint8_t dev_addr = BMP581_I2C_ADDR;
     bmp581_dev.intf_ptr = &dev_addr;
     
     Serial.println("Calling bmp5_init...");
