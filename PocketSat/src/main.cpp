@@ -20,25 +20,40 @@ void setup()
   Wire1.begin();
   Serial.println("I2C1 initialized");
 
-  if (InitializeSensors() == 0) {
+  SPI1.setMISO(SPI1_MISO_PIN);
+  SPI1.setMOSI(SPI1_MOSI_PIN);
+  SPI1.setSCK(SPI1_SCK_PIN);
+  SPI1.begin();
+
+  if (InitializeSensors() == 0)
+  {
     Serial.println("All sensors initialized successfully.");
-  } else {
+  }
+  else
+  {
     Serial.println("One or more sensors failed to initialize.");
-    while(1); // Stop execution if sensors failed to initialize
+    while (1)
+      ; // Stop execution if sensors failed to initialize
   }
 
-  if (ConfigureSensors() == 0) {
+  if (ConfigureSensors() == 0)
+  {
     Serial.println("All sensors configured successfully.");
-  } else {
+  }
+  else
+  {
     Serial.println("One or more sensors failed to configure.");
   }
 }
 
 void loop()
 {
-  if (ReadSensors() != 0) {
+  if (ReadSensors() != 0)
+  {
     Serial.println("Failed to read sensors data!");
-  } else {
+  }
+  else
+  {
     Serial.printf("HDC: %.2f ºC, %.2f %%\n", sensorData.hdcData.Temperature, sensorData.hdcData.Humidity);
     Serial.printf("BMP: %.2f ºC, %.2f hPa, %.2f m\n", sensorData.bmpData.Temperature, sensorData.bmpData.Pressure, sensorData.bmpData.Altitude);
     Serial.printf("LPS: %.2f ºC, %.2f hPa, %.2f m\n", sensorData.lpsData.Temperature, sensorData.lpsData.Pressure, sensorData.lpsData.Altitude);

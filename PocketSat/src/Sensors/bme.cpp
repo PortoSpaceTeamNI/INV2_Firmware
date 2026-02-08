@@ -10,14 +10,8 @@ BME280SpiSw bme(settings);
 
 int InitializeBME280()
 {
-    SPI1.setMISO(BME280_MISO_PIN);
-    SPI1.setMOSI(BME280_MOSI_PIN);
-    SPI1.setSCK(BME280_SCK_PIN);
-    SPI1.begin();
-
     pinMode(BME280_CS_PIN, OUTPUT);
     digitalWrite(BME280_CS_PIN, HIGH); // Ensure CS is high before initialization
-    delay(100); // Short delay to ensure SPI is ready before initializing the sensor
 
     if (!bme.begin())
     {

@@ -5,6 +5,9 @@
 #define I2C0_SDA_PIN 24
 #define I2C1_SCL_PIN 3
 #define I2C1_SDA_PIN 2
+#define SPI1_MOSI_PIN 11
+#define SPI1_MISO_PIN 8
+#define SPI1_SCK_PIN 10
 
 // BMP581 - Barometric Pressure & Temperature Sensor
 #define BMP581_SCL_PIN IDC0_SCL_PIN
@@ -17,9 +20,9 @@
 #define LPS22DF_RDY_PIN 0
 
 // BME280 - Barometric Pressure, Temperature & Humidity Sensor
-#define BME280_MOSI_PIN 11
-#define BME280_MISO_PIN 8
-#define BME280_SCK_PIN 10
+#define BME280_MOSI_PIN SPI1_MOSI_PIN
+#define BME280_MISO_PIN SPI1_MISO_PIN
+#define BME280_SCK_PIN SPI1_SCK_PIN
 #define BME280_CS_PIN 9
 
 // Texas Instruments HDC3020 - Temperature & Humidity Sensor
