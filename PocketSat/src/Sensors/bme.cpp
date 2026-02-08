@@ -15,6 +15,10 @@ int InitializeBME280()
     SPI1.setSCK(BME280_SCK_PIN);
     SPI1.begin();
 
+    pinMode(BME280_CS_PIN, OUTPUT);
+    digitalWrite(BME280_CS_PIN, HIGH); // Ensure CS is high before initialization
+    delay(100); // Short delay to ensure SPI is ready before initializing the sensor
+
     if (!bme.begin())
     {
         return -1; // Return -1 on failure
