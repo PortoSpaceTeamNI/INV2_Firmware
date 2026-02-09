@@ -1,10 +1,12 @@
-#ifndef IO_MAP_H
-#define IO_MAP_H
-
-//* Actuation Unit
-
+#ifndef PINOUT_H
+#define PINOUT_H
 
 #define BUZZER 3
+
+// BMP581 - Barometric Pressure & Temperature Sensor
+#define BMP581_SCL_PIN I2C_SCL_PIN0
+#define BMP581_SDA_PIN I2C_SDA_PIN0
+#define BMP581_RDY_PIN 21
 
 //* I2C
 #define I2C_SDA_PIN0 20
@@ -43,4 +45,4 @@
 #define CTS_OBC_PIN 18
 #define RTS_OBC_PIN 19
 
-#endif  // IO_MAP_N
+#endif // PINOUT_H

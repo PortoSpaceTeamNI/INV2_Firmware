@@ -1,5 +1,4 @@
-#include "Peripherals/Buzzer.h"
-#include "VeryImportantFile.h"  // For success_song function
+#include "Sensors/Buzzer.h"
 
 void setup_buzzer() {
     pinMode(BUZZER, OUTPUT);
@@ -26,6 +25,4 @@ void play_buzzer_success() {
         play_buzzer(2000, 75); 
         delay(150);
     }
-    
-    //success_song(BUZZER_PWM_PIN);
 }
