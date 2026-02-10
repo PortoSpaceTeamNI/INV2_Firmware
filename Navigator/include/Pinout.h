@@ -13,6 +13,11 @@
 #define LSM6SO_SDA_PIN I2C_SDA_PIN1
 #define INT1_ST_IMU 12
 
+// ST LPS22DF - Barometric Pressure & Temperature Sensor
+#define LPS22DF_SCL_PIN I2C_SCL_PIN0
+#define LPS22DF_SDA_PIN I2C_SCL_PIN0
+#define LPS22DF_RDY_PIN 22
+
 //* I2C
 #define I2C_SDA_PIN0 20
 #define I2C_SCL_PIN0 21

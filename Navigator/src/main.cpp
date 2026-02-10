@@ -7,6 +7,10 @@ extern SensorDataResult sensorData;
 
 void setup() {
   Serial.begin(115200); // Start serial communication
+
+  delay(1000);
+  while (!Serial && millis() < 3000) { delay(10); } // wait for monitor
+
   Serial.println("Navigator Initiating...");
   setup_buzzer();
   Serial.println("Starting Setup...");
@@ -29,6 +33,7 @@ void setup() {
     Serial.println("Sensors Configured.");
   } else Serial.println("One or more sensors failed to configure.");
 
+  play_buzzer_success();
 }
 
 void loop() {

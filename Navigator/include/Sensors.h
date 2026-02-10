@@ -7,12 +7,13 @@
 #include "Pinout.h"
 #include "Sensors/bmp.h"
 #include "Sensors/lsm.h"
+#include "Sensors/lps.h"
 
 typedef struct
 {
     BMP581DataResult bmpData;
     LSM6DSODataResult lsmData;
-    // LPS22DFDataResult lpsData;
+    LPS22DFDataResult lpsData;
 } SensorDataResult;
 
 int InitializeSensors();
