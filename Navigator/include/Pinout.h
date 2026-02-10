@@ -6,7 +6,12 @@
 // BMP581 - Barometric Pressure & Temperature Sensor
 #define BMP581_SCL_PIN I2C_SCL_PIN0
 #define BMP581_SDA_PIN I2C_SDA_PIN0
-#define BMP581_RDY_PIN 21
+#define BMP581_RDY_PIN 23
+
+// LSM6DSO: 6.4KHz, I2C Fast Mode 400kHz, ADDR 0x6A
+#define LSM6SO_SCL_PIN I2C_SCL_PIN1
+#define LSM6SO_SDA_PIN I2C_SDA_PIN1
+#define INT1_ST_IMU 12
 
 //* I2C
 #define I2C_SDA_PIN0 20
