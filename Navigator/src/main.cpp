@@ -1,59 +1,44 @@
 #include <Arduino.h>
-#include <Crc.h>
-#include <Wire.h>
-#include <inttypes.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-#include <iostream>
+#include "Sensors.h"
+#include "Display.h"
+#include "Sensors/buzzer.h"
 
-#include "Comms.h"
-#include "DataModels.h"
-#include "HardwareCfg.h"
-#include "Peripherals/IO_Map.h"
-#include "Peripherals/Buzzer.h"
-#include "bmp5_defs.h"
-#include "bmp5.h"
-#include "Peripherals/bmp581.h"
+extern SensorDataResult sensorData;
 
 void setup() {
-  Serial.begin(9600); // Start serial communication
+  Serial.begin(115200); // Start serial communication
 
+  delay(1000);
+  while (!Serial && millis() < 3000) { delay(10); } // wait for monitor
+
+  Serial.println("Navigator Initiating...");
   setup_buzzer();
   Serial.println("Starting Setup...");
 
-  if (bmp_setup() == 0) {
-    Serial.println("Setup complete!");
-    play_buzzer_success();
-  } else {
-    Serial.println("Setup failed!");
-    play_buzzer_error();
-  }
+  Wire.setSDA(I2C_SDA_PIN0);
+  Wire.setSCL(I2C_SCL_PIN0);
+  Wire.begin();
+  Serial.println("I2C0 initialized");
+
+  Wire1.setSDA(I2C_SDA_PIN1);
+  Wire1.setSCL(I2C_SCL_PIN1);
+  Wire1.begin();
+  Serial.println("I2C1 initialized");
+
+  if (InitializeSensors() == 0) {
+    Serial.println("Sensors initialized.");
+  } else Serial.println("One or more sensors failed.");
+
+  if (ConfigureSensors() == 0) {
+    Serial.println("Sensors Configured.");
+  } else Serial.println("One or more sensors failed to configure.");
+
+  play_buzzer_success();
 }
 
 void loop() {
-    // Read sensor data
-    bmp5_sensor_data sensor_data;
-    bmp5_osr_odr_press_config osr_odr_press_cfg;
-    osr_odr_press_cfg.press_en = BMP5_ENABLE;  // Pressure enable
-    osr_odr_press_cfg.osr_p = 4;               // Oversampling rate for pressure
-    osr_odr_press_cfg.odr = 4;                 // Output Data Rate
+  if (ReadSensors() != 0) Serial.println("Failed to read data.");
+  else DisplayData(&sensorData);
 
-
-  if (digitalRead(BAR2_RDY) == LOW) {  // Check if data is ready
-    int8_t status = bmp5_get_sensor_data(&sensor_data, &osr_odr_press_cfg, &bmp581_dev);
-    if (status == 0) {
-      // Print the pressure and temperature data
-      Serial.print("Pressure: ");
-      Serial.print(sensor_data.pressure / 100);  // Pressure in hPa (divide by 100 to convert from Pa)
-      Serial.print(" hPa, Temperature: ");
-      Serial.println(sensor_data.temperature);  // Temperature in °C
-    } else {
-      Serial.println("Error reading data from BMP581.");
-    }
-  } else {
-    Serial.println("Sensor data not ready yet...");
-  }
-
-  delay(1000);  // Delay to allow next reading (1 second)
+  delay(1000);
 }
