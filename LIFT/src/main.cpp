@@ -44,7 +44,7 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(USB_BAUD_RATE); // USBC serial
     Serial.println("Setting up...");
-    sd_init(SD_CS_PIN); // SD card
+    //sd_init(SD_CS_PIN); // SD card
     //rs485_init(); // RS-485 serial
     setup_error |= loadcells_setup(); // change to loadcell setup
     Serial.println("Setup good");
@@ -69,12 +69,13 @@ void loop()
     read_sensors(&my_data);
     Serial.print("Loadcells: ");
     Serial.print(my_data.loadcells.loadcell1);
-    Serial.print(", ");
-    Serial.print(my_data.loadcells.loadcell2);
-    Serial.print(", ");
-    Serial.println(my_data.loadcells.loadcell3);
+    //Serial.print(", ");
+    //Serial.print(my_data.loadcells.loadcell2);
+    //Serial.print(", ");
+    //Serial.println(my_data.loadcells.loadcell3);
     Serial.println();
     
+    /*
     // Write loadcell values to CSV
     char csv_line[256];
     snprintf(csv_line, sizeof(csv_line), "%lu,%d,%d,%d\n", 
@@ -83,5 +84,7 @@ void loop()
              my_data.loadcells.loadcell2, 
              my_data.loadcells.loadcell3);
     sd_log_raw(csv_line);
+    */
     digitalWrite(LED_BUILTIN, LOW);
+    delay(10);
 }
