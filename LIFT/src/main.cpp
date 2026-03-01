@@ -47,6 +47,17 @@ void setup()
     //sd_init(SD_CS_PIN); // SD card
     //rs485_init(); // RS-485 serial
     setup_error |= loadcells_setup(); // change to loadcell setup
+    if (setup_error)
+    {
+        Serial.println("Setup error!");
+        while (1)
+        {
+            digitalWrite(LED_BUILTIN, HIGH);
+            delay(100);
+            digitalWrite(LED_BUILTIN, LOW);
+            delay(100);
+        }
+    } 
     Serial.println("Setup good");
     // List all files on SD card
 }
@@ -58,6 +69,7 @@ void loop()
     // check if we have new data
     // if we get a valid message, execute the command associated to it
     digitalWrite(LED_BUILTIN, HIGH);
+
     /*
     packet_t *packet = read_packet(&error);
     if (packet != NULL && error == CMD_READ_OK)
@@ -66,13 +78,17 @@ void loop()
         
     }
     */
+
     read_sensors(&my_data);
     Serial.print("Loadcells: ");
     Serial.print(my_data.loadcells.loadcell1);
-    //Serial.print(", ");
-    //Serial.print(my_data.loadcells.loadcell2);
-    //Serial.print(", ");
-    //Serial.println(my_data.loadcells.loadcell3);
+    if(MY_ID == LIFT_THRUST_ID)
+    {
+        Serial.print(", ");
+        Serial.print(my_data.loadcells.loadcell2);
+        Serial.print(", ");
+        Serial.print(my_data.loadcells.loadcell3);
+    }
     Serial.println();
     
     /*

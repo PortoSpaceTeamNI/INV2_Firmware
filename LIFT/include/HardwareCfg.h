@@ -7,4 +7,6 @@
 
 #define LOADCELL_POLL_INTERVAL 10  // milliseconds
 
+#define MY_ID LIFT_THRUST_ID
+
 #endif // HARDWARE_CFG_H
