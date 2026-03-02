@@ -51,6 +51,8 @@ struct __attribute__((__packed__)) HydraFSData {
     uint8_t valve_n2_purge;
     uint8_t valve_ox_fill;
     uint8_t valve_ox_purge;
+    uint8_t valve_n2o_quick_dc;
+    uint8_t valve_n2_quick_dc;
     uint16_t n2_pressure;
     uint16_t ox_pressure;
     uint16_t n2_temperature;

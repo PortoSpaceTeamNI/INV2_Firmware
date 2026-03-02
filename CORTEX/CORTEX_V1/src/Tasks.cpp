@@ -14,9 +14,11 @@ int createTasks() {
   if (xTaskCreate(vStateMachineTask, "StateMachine", 1024, NULL, 2, NULL) != pdPASS) {
     return -1;
   }
+  
   if (xTaskCreate(vDataPollingTask, "DataPolling", 1024, NULL, 1, NULL) != pdPASS) {
     return -1;
   }
+  
   if (xTaskCreate(vRS485Task, "RS485", 1024, NULL, 4, NULL) != pdPASS) {
     return -1;
   }

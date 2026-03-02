@@ -101,6 +101,6 @@ void vRS485Task(void *pvParameters)
         waitingStartTime = millis();
       }
     }
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(5));
   }
 }

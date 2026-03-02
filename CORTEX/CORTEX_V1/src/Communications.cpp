@@ -91,14 +91,12 @@ int write_to_rs485(uint8_t *buffer, size_t size)
     const unsigned long frameTimeUs = (unsigned long)(((size * 10UL * 1000000UL) + (RS485_BAUD_RATE - 1)) / RS485_BAUD_RATE);
 
     digitalWrite(ENABLE_RS_PIN, RS485_TX_ENABLE_LEVEL); // switch to transmit mode
-    delayMicroseconds(RS485_TX_ENABLE_SETUP_US);
     if (Serial2.write(buffer, size) != size)
     {
         digitalWrite(ENABLE_RS_PIN, RS485_RX_ENABLE_LEVEL); // switch back to receive mode
         return -1;
     }
     Serial2.flush();
-    delayMicroseconds(frameTimeUs + RS485_TX_ENABLE_HOLD_US);
     digitalWrite(ENABLE_RS_PIN, RS485_RX_ENABLE_LEVEL); // switch back to receive mode
     return 0;
 }
@@ -107,7 +105,6 @@ void read_from_rs485(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *st
 {
     while (Serial2.available() && *state != END)
     {
-        Serial1.println(Serial2.peek(), HEX);
         *read_byte = Serial2.read();
         *state = parse_input(*read_byte, packet, *state);
     }
@@ -147,6 +144,7 @@ int write_packet(packet_t *packet, interface_t interface)
         buff[size++] = packet->payload[i];
     buff[size++] = ((packet->crc >> 8) & 0xff);
     buff[size++] = ((packet->crc) & 0xff);
+
     switch (interface)
     {
     case LORA_INTERFACE:

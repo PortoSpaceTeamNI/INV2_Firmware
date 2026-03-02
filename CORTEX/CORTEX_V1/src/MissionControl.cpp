@@ -4,6 +4,7 @@
 #include "Queues.h"
 #include "StateMachine.h"
 #include "DataPolling.h"
+#include "ValveRouting.h"
 #include "Configs.h"
 #include <Arduino.h>
 
@@ -32,8 +33,26 @@ int processManualExecCommand(packet_t *packet)
     // TODO: Return the logging data (file count, file ids, space left, etc).
     break;
   case CMD_MANUAL_VALVE_STATE:
-    // Forward to RS485 task to send to valve controller
-    xQueueSend(ManualCommandQueue, packet, 0);
+    if (packet->payload_size < 3)
+    {
+      return -1;
+    }
+    {
+      ValveRoute route;
+      if (getValveRoute((valve_t)packet->payload[1], &route) != 0)
+      {
+        return -1;
+      }
+
+      packet->sender_id = CORTEX_ID;
+      packet->target_id = route.hydraId;
+      packet->payload[1] = route.hydraValve;
+
+      if (xQueueSend(ManualCommandQueue, packet, 0) != pdPASS)
+      {
+        return -1;
+      }
+    }
     break;
   default:
     return -1;
@@ -115,7 +134,9 @@ static int buildStatusAckPayload(packet_t *ack)
   flags |= (uint16_t)(rocketData.hydraFSData.valve_ox_purge     & 0x01) << 5; // n2o purge
   flags |= (uint16_t)(rocketData.hydraFSData.valve_n2_fill      & 0x01) << 6; // n2 fill
   flags |= (uint16_t)(rocketData.hydraFSData.valve_n2_purge     & 0x01) << 7; // n2 purge
-  // bits 8-12: ematches / quick-dc valves — not yet implemented, leave 0
+  // bits 8-10: ematches — not yet implemented, leave 0
+  flags |= (uint16_t)(rocketData.hydraFSData.valve_n2o_quick_dc & 0x01) << 11;
+  flags |= (uint16_t)(rocketData.hydraFSData.valve_n2_quick_dc  & 0x01) << 12;
   WRITE_U16_BE(p, idx, flags); idx += 2;
 
   // [4-5]   hydra_lf tank_bottom_pressure
@@ -265,17 +286,19 @@ void vMissionControlTask(void *pvParameters)
   //Serial1.println("[TASK] MissionControl task started");
   while (true)
   {
+    bool hadPacket = false;
     //Serial1.println("[TASK] Running: MissionControl");
     // Read from mission control (e.g. LoRa, RS485)
     int error;
     packet_t *receivedPacket = read_packet(&error, UART_INTERFACE);
     if (receivedPacket != NULL && error == CMD_READ_OK)
     {
+      hadPacket = true;
       static packet_t ack;
       uint8_t ack_payload[1] = {receivedPacket->cmd};
       if (create_packet(&ack, CORTEX_ID, receivedPacket->sender_id, CMD_NACK, ack_payload, sizeof(ack_payload)) != 0)
       {
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(5));
         continue;
       }
       processMissionControlCommand(receivedPacket, &ack);
@@ -284,8 +307,10 @@ void vMissionControlTask(void *pvParameters)
       Serial1.print("Error reading packet from Mission Control: ");
       Serial1.println(error);
     }
-
-    // Send command to proper queue (EventQueue for state machine events, ManualCommandQueue for manual commands)
-    vTaskDelay(pdMS_TO_TICKS(10));
+    if (!hadPacket) {
+      vTaskDelay(pdMS_TO_TICKS(5));
+    } else {
+      taskYIELD();
+    }
   }
 }
