@@ -2,7 +2,8 @@
 #define COMMANDS_H
 
 typedef enum {
-    CMD_FILL_N2 = 0,
+    CMD_FILL_NONE = 0,
+    CMD_FILL_N2,
     CMD_PRE_PRESSURIZE,
     CMD_FILL_OX,
     CMD_POST_PRESSURIZE,

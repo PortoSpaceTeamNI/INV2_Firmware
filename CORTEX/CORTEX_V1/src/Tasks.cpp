@@ -8,16 +8,16 @@
 #include "RS485.h"
 
 int createTasks() {
-  if (xTaskCreate(vMissionControlTask, "MissionControl", 256, NULL, 3, NULL) != pdPASS) {
+  if (xTaskCreate(vMissionControlTask, "MissionControl", 1024, NULL, 3, NULL) != pdPASS) {
     return -1;
   }
-  if (xTaskCreate(vStateMachineTask, "StateMachine", 256, NULL, 2, NULL) != pdPASS) {
+  if (xTaskCreate(vStateMachineTask, "StateMachine", 1024, NULL, 2, NULL) != pdPASS) {
     return -1;
   }
-  if (xTaskCreate(vDataPollingTask, "DataPolling", 256, NULL, 1, NULL) != pdPASS) {
+  if (xTaskCreate(vDataPollingTask, "DataPolling", 1024, NULL, 1, NULL) != pdPASS) {
     return -1;
   }
-  if (xTaskCreate(vRS485Task, "RS485", 256, NULL, 4, NULL) != pdPASS) {
+  if (xTaskCreate(vRS485Task, "RS485", 1024, NULL, 4, NULL) != pdPASS) {
     return -1;
   }
   return 0;

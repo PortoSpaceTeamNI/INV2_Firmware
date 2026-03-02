@@ -86,7 +86,7 @@ RocketState updateState(RocketState currentState, RocketEvent event)
 
 int performStateRun(RocketState currentState, StateMachineConfigs *configs, RocketData *data)
 {
-  data->cortexData.time_since_state_start_ms = millis() - data->cortexData.time_since_state_start_ms; // Update time since state start
+  uint32_t elapsed_ms = millis() - data->cortexData.time_state_start_ms;
   switch (currentState)
   {
   case IDLE:
@@ -133,7 +133,7 @@ int performStateRun(RocketState currentState, StateMachineConfigs *configs, Rock
     }
     break;
   case ARMED:
-    if (data->cortexData.time_since_state_start_ms >= configs->arming_timeout_ms)
+    if (elapsed_ms >= configs->arming_timeout_ms)
     {
       // Go to IDLE state
       RocketEvent stopEvent = EV_STOP_CMD;
@@ -141,7 +141,7 @@ int performStateRun(RocketState currentState, StateMachineConfigs *configs, Rock
     }
     break;
   case IGNITION:
-    if (data->cortexData.time_since_state_start_ms >= configs->ignition_timeout_ms)
+    if (elapsed_ms >= configs->ignition_timeout_ms)
     {
       // Go to IDLE state
       RocketEvent stopEvent = EV_STOP_CMD;
@@ -201,7 +201,7 @@ int performStateRun(RocketState currentState, StateMachineConfigs *configs, Rock
 
 int performStateEntry(RocketState currentState, StateMachineConfigs *configs, RocketData *data)
 {
-  data->cortexData.time_since_state_start_ms = 0; // Reset state timer on entry
+  data->cortexData.time_state_start_ms = millis(); // Record state entry timestamp
   switch (currentState)
   {
   case IDLE:
@@ -271,15 +271,15 @@ int performStateExit(RocketState state, StateMachineConfigs *configs, RocketData
 
 void vStateMachineTask(void *pvParameters)
 {
-  RocketState currentState = IDLE;
+  static RocketState currentState = IDLE;
   RocketEvent receivedEvent;
   
-  //Serial.println("[TASK] StateMachine task started");
+  //Serial1.println("[TASK] StateMachine task started");
   while (true)
   {
-    //Serial.println("[TASK] Running: StateMachine");
+    //Serial1.println("[TASK] Running: StateMachine");
     // Receive events from EventQueue
-    if (xQueueReceive(EventQueue, &receivedEvent, pdMS_TO_TICKS(100)) == pdTRUE)
+    if (xQueueReceive(EventQueue, &receivedEvent, pdMS_TO_TICKS(10)) == pdTRUE)
     {
       // Process state machine transitions
       RocketState newState = updateState(currentState, receivedEvent);
@@ -292,6 +292,7 @@ void vStateMachineTask(void *pvParameters)
           if (xSemaphoreTake(rocketDataMutex, portMAX_DELAY) == pdTRUE) {
             performStateExit(currentState, &stateMachineConfigs, &rocketData);
             performStateEntry(newState, &stateMachineConfigs, &rocketData);
+            rocketData.cortexData.rocket_state = newState;
             currentState = newState;
             xSemaphoreGive(rocketDataMutex);
           }
@@ -309,6 +310,8 @@ void vStateMachineTask(void *pvParameters)
         xSemaphoreGive(stateMachineConfigsMutex);
       }
     } else {
+      RocketEvent updateEvent = EV_NONE;
+      xQueueSend(EventQueue, &updateEvent, 0); // Send EV_NONE to trigger state run without state change
       vTaskDelay(pdMS_TO_TICKS(10)); // No event received, delay to allow other tasks to run
     }
   }

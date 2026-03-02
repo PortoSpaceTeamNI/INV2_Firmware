@@ -14,6 +14,7 @@
 #define _COMMS_H_
 
 #include <inttypes.h>
+#include <stddef.h>
 #include <time.h>
 
 #define SYNC_BYTE 0x55
@@ -62,6 +63,7 @@ typedef enum
 #define CRC_ENABLED false
 
 // Board IDs
+#define MISSION_CONTROL_ID 0
 #define CORTEX_ID 1
 #define HYDRA_UF_ID 2
 #define HYDRA_LF_ID 3
@@ -72,8 +74,9 @@ typedef enum
 #define LIFT_THRUST_ID 8
 #define BROADCAST_ID 0xFF
 
-void write_packet(packet_t *cmd, interface_t interface);
+int write_packet(packet_t *cmd, interface_t interface);
 packet_t *read_packet(int *error, interface_t interface);
 int create_packet(packet_t *packet, uint8_t sender_id, uint8_t target_id, uint8_t cmd, uint8_t *payload, uint8_t payload_size);
+int write_to_rs485(uint8_t *buffer, size_t size);
 
-#endif
+#endif // _COMMS_H_

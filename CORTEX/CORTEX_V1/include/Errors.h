@@ -1,0 +1,12 @@
+#ifndef ERRORS_H
+#define ERRORS_H
+
+typedef enum {
+  SETUP_OK = 0,
+  QUEUE_CREATION_FAILED,
+  MUTEX_CREATION_FAILED,
+  TASK_CREATION_FAILED,
+  ERR_UNKNOWN
+} ErrorCode;
+
+#endif // ERRORS_H

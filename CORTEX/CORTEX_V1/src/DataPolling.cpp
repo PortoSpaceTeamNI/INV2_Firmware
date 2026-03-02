@@ -11,10 +11,60 @@
 extern QueueHandle_t AcknowledgementQueue;
 extern QueueHandle_t StatusQueue;
 extern SemaphoreHandle_t rocketDataMutex;
-extern SemaphoreHandle_t waitingForResponseMutex;
-extern bool waitingForResponse;
+extern volatile bool waitingForResponse;
 
 RocketData rocketData;
+
+static uint8_t expectedStatusSenderId = 0;
+
+static uint8_t expectedStatusPayloadSizeForSender(uint8_t senderId)
+{
+  switch (senderId)
+  {
+  case HYDRA_UF_ID:
+    return sizeof(HydraUFData);
+  case HYDRA_LF_ID:
+    return sizeof(HydraLFData);
+  case HYDRA_FS_ID:
+    return sizeof(HydraFSData);
+  case NAVIGATOR_ID:
+    return sizeof(NavigatorData);
+  case LIFT_TANK_ID:
+    return sizeof(LiftTankData);
+  case LIFT_BOTTLE_ID:
+    return sizeof(LiftBottleData);
+  case LIFT_THRUST_ID:
+    return sizeof(LiftThrustData);
+  default:
+    return 0;
+  }
+}
+
+static bool isExpectedStatusAck(const packet_t *ack)
+{
+  if (ack == nullptr || ack->cmd != CMD_ACK || ack->payload_size < 1)
+  {
+    return false;
+  }
+
+  if (ack->payload[0] != CMD_STATUS)
+  {
+    return false;
+  }
+
+  if (ack->sender_id != expectedStatusSenderId)
+  {
+    return false;
+  }
+
+  const uint8_t expectedPayloadSize = expectedStatusPayloadSizeForSender(ack->sender_id);
+  if (expectedPayloadSize == 0)
+  {
+    return false;
+  }
+
+  return ack->payload_size == (uint8_t)(expectedPayloadSize + 1);
+}
 
 int requestStatus(uint8_t targetID)
 {
@@ -23,8 +73,9 @@ int requestStatus(uint8_t targetID)
   create_packet(&packet, CORTEX_ID, targetID, CMD_STATUS, payload, 0);
 
   // Use timeout when sending to queue to avoid blocking indefinitely
-  if (xQueueSend(StatusQueue, &packet, pdMS_TO_TICKS(100)) == pdPASS)
+  if (xQueueSend(StatusQueue, &packet, pdMS_TO_TICKS(10)) == pdPASS)
   {
+    expectedStatusSenderId = targetID;
     return 0;
   }
   return -1; // Failed to send
@@ -34,7 +85,14 @@ int pollNextSlave()
 {
   static uint8_t nextSlaveId = HYDRA_UF_ID; // Start polling from the first slave
 
-  requestStatus(nextSlaveId);
+  if (requestStatus(nextSlaveId) != 0)
+  {
+    Serial1.print("Failed to request status from slave ID: ");
+    Serial1.println(nextSlaveId);
+  } else {
+    //Serial1.print("Requested status from slave ID: ");
+    //Serial1.println(nextSlaveId);
+  }
 
   // Round-robin to the next slave for the next poll
   nextSlaveId++;
@@ -47,6 +105,14 @@ int pollNextSlave()
 
 void processStatusAck(packet_t *ack)
 {
+  if (!isExpectedStatusAck(ack))
+  {
+    return;
+  }
+
+  // First payload byte is the acknowledged command (CMD_STATUS)
+  const uint8_t *statusPayload = ack->payload + 1;
+
   // Process status acknowledgment based on sender ID
   // TODO: Maybe will change if bools are sent as bitfields
 
@@ -56,50 +122,30 @@ void processStatusAck(packet_t *ack)
     switch (ack->sender_id)
     {
     case HYDRA_UF_ID:
-      if (ack->payload_size >= sizeof(HydraUFData))
-      {
-        memcpy(&rocketData.hydraUFData, ack->payload, sizeof(HydraUFData));
-      }
+      memcpy(&rocketData.hydraUFData, statusPayload, sizeof(HydraUFData));
       break;
     case HYDRA_LF_ID:
-      if (ack->payload_size >= sizeof(HydraLFData))
-      {
-        memcpy(&rocketData.hydraLFData, ack->payload, sizeof(HydraLFData));
-      }
+      memcpy(&rocketData.hydraLFData, statusPayload, sizeof(HydraLFData));
       break;
     case HYDRA_FS_ID:
-      if (ack->payload_size >= sizeof(HydraFSData))
-      {
-        memcpy(&rocketData.hydraFSData, ack->payload, sizeof(HydraFSData));
-      }
+      memcpy(&rocketData.hydraFSData, statusPayload, sizeof(HydraFSData));
       break;
     case NAVIGATOR_ID:
-      if (ack->payload_size >= sizeof(NavigatorData))
-      {
-        memcpy(&rocketData.navigatorData, ack->payload, sizeof(NavigatorData));
-      }
+      memcpy(&rocketData.navigatorData, statusPayload, sizeof(NavigatorData));
       break;
     case LIFT_TANK_ID:
-      if (ack->payload_size >= sizeof(LiftTankData))
-      {
-        memcpy(&rocketData.liftTankData, ack->payload, sizeof(LiftTankData));
-      }
+      memcpy(&rocketData.liftTankData, statusPayload, sizeof(LiftTankData));
       break;
     case LIFT_BOTTLE_ID:
-      if (ack->payload_size >= sizeof(LiftBottleData))
-      {
-        memcpy(&rocketData.liftBottleData, ack->payload, sizeof(LiftBottleData));
-      }
+      memcpy(&rocketData.liftBottleData, statusPayload, sizeof(LiftBottleData));
       break;
     case LIFT_THRUST_ID:
-      if (ack->payload_size >= sizeof(LiftThrustData))
-      {
-        memcpy(&rocketData.liftThrustData, ack->payload, sizeof(LiftThrustData));
-      }
+      memcpy(&rocketData.liftThrustData, statusPayload, sizeof(LiftThrustData));
       break;
     default:
       break;
     }
+    expectedStatusSenderId = 0;
     // Release mutex after accessing rocketData
     xSemaphoreGive(rocketDataMutex);
   }
@@ -107,33 +153,27 @@ void processStatusAck(packet_t *ack)
 
 void vDataPollingTask(void *pvParameters)
 {
-  int32_t lastPollTime = 0;
-  //Serial.println("[TASK] DataPolling task started");
+  uint32_t lastPollTime = 0;
+  //Serial1.println("[TASK] DataPolling task started");
   while (true)
   {
-    //Serial.println("[TASK] Running: DataPolling");
-    // Poll rs bus - check if the top of acknowledgments queue is a status ack
-    packet_t ack;
-    if (xQueuePeek(AcknowledgementQueue, &ack, 0) == pdTRUE)
+    //Serial1.println("[TASK] Running: DataPolling");
+    // Poll rs bus acknowledgments
+    static packet_t ack;
+    if (xQueueReceive(AcknowledgementQueue, &ack, 0) == pdTRUE)
     {
-      // Check if it's a status acknowledgment
-      if (ack.cmd == CMD_ACK && ack.payload[0] == CMD_STATUS)
-      {
-        // Remove from queue
-        xQueueReceive(AcknowledgementQueue, &ack, 0);
-
-        // Process it and update system data
-        processStatusAck(&ack);
-      }
+      processStatusAck(&ack);
     }
 
     if ((millis() - lastPollTime) >= STATUS_POLL_INTERVAL_MS)
     {
       // If not waiting for response, poll next slave
-      pollNextSlave();
-      lastPollTime = millis();
+      if (!waitingForResponse)
+      {
+        pollNextSlave();
+        lastPollTime = millis();
+      }
     }
-
     vTaskDelay(pdMS_TO_TICKS(10));
   }
 }

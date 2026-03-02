@@ -14,7 +14,7 @@ bool check_crc(packet_t *packet)
 static cmd_parse_state_t parse_input(uint8_t read_byte, packet_t *packet, cmd_parse_state_t cmd_state)
 {
     uint8_t state = cmd_state;
-    // Serial.printf("State: %d - RX: 0x%x\n", state, read_byte);
+    // Serial1.printf("State: %d - RX: 0x%x\n", state, read_byte);
     switch (state)
     {
     case SYNC:
@@ -40,12 +40,22 @@ static cmd_parse_state_t parse_input(uint8_t read_byte, packet_t *packet, cmd_pa
         break;
     case PAYLOAD_SIZE:
         packet->payload_size = read_byte;
+        if (packet->payload_size > MAX_PAYLOAD_SIZE)
+        {
+            state = SYNC;
+            break;
+        }
         if (packet->payload_size == 0)
             state = CRC1;
         else
             state = PAYLOAD;
         break;
     case PAYLOAD:
+        if (packet->data_recv >= MAX_PAYLOAD_SIZE)
+        {
+            state = SYNC;
+            break;
+        }
         packet->payload[packet->data_recv++] = read_byte;
         if (packet->data_recv == packet->payload_size)
             state = CRC1;
@@ -65,17 +75,39 @@ static cmd_parse_state_t parse_input(uint8_t read_byte, packet_t *packet, cmd_pa
 }
 
 /* RS485 */
-void write_to_rs485(uint8_t *buffer, size_t size)
+int write_to_rs485(uint8_t *buffer, size_t size)
 {
-    digitalWrite(ENABLE_RS_PIN, HIGH); // switch to transmit mode
-    Serial2.write(buffer, size);
+#if RS485_DEBUG_LOG
+    Serial1.println("Writing to RS485:");
+    for (size_t i = 0; i < size; i++)
+    {
+        Serial1.print("0x");
+        Serial1.println(buffer[i], HEX);
+    }
+#endif
+
+    // Keep DE asserted long enough for all bits to leave the transceiver.
+    // 1 start + 8 data + 1 stop bit = 10 bits per byte (8N1).
+    const unsigned long frameTimeUs = (unsigned long)(((size * 10UL * 1000000UL) + (RS485_BAUD_RATE - 1)) / RS485_BAUD_RATE);
+
+    digitalWrite(ENABLE_RS_PIN, RS485_TX_ENABLE_LEVEL); // switch to transmit mode
+    delayMicroseconds(RS485_TX_ENABLE_SETUP_US);
+    if (Serial2.write(buffer, size) != size)
+    {
+        digitalWrite(ENABLE_RS_PIN, RS485_RX_ENABLE_LEVEL); // switch back to receive mode
+        return -1;
+    }
     Serial2.flush();
-    digitalWrite(ENABLE_RS_PIN, LOW); // switch back to receive mode
+    delayMicroseconds(frameTimeUs + RS485_TX_ENABLE_HOLD_US);
+    digitalWrite(ENABLE_RS_PIN, RS485_RX_ENABLE_LEVEL); // switch back to receive mode
+    return 0;
 }
+
 void read_from_rs485(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *state)
 {
     while (Serial2.available() && *state != END)
     {
+        Serial1.println(Serial2.peek(), HEX);
         *read_byte = Serial2.read();
         *state = parse_input(*read_byte, packet, *state);
     }
@@ -91,12 +123,17 @@ void read_from_serial(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *s
     }
 }
 
-void write_to_serial(uint8_t *buffer, size_t size)
+int write_to_serial(uint8_t *buffer, size_t size)
 {
-    Serial.write(buffer, size);
+    if (Serial.write(buffer, size) != size)
+    {
+        Serial1.println("Failed to write to serial");
+        return -1;
+    }
+    return 0;
 }
 
-void write_packet(packet_t *packet, interface_t interface)
+int write_packet(packet_t *packet, interface_t interface)
 {
     int size = 0;
     uint8_t buff[MAX_PACKET_SIZE] = {0}; // 2 bytes from CRC
@@ -115,14 +152,21 @@ void write_packet(packet_t *packet, interface_t interface)
     case LORA_INTERFACE:
         break;
     case RS485_INTERFACE:
-        write_to_rs485(buff, size);
+        if (write_to_rs485(buff, size) != 0)
+        {
+            return -1;
+        }
         break;
     case UART_INTERFACE:
-        write_to_serial(buff, size);
+        if (write_to_serial(buff, size) != 0)
+        {
+            return -1;
+        }
         break;
     default:
         break;
     }
+    return 0;
 }
 
 packet_t *read_packet(int *error, interface_t interface)
@@ -191,11 +235,33 @@ packet_t *read_packet(int *error, interface_t interface)
 
 int create_packet(packet_t *packet, uint8_t sender_id, uint8_t target_id, uint8_t cmd, uint8_t *payload, uint8_t payload_size)
 {
+    if (packet == NULL)
+    {
+        return -1;
+    }
+
+    if (payload_size > MAX_PAYLOAD_SIZE)
+    {
+        return -1;
+    }
+
+    if (payload_size > 0 && payload == NULL)
+    {
+        return -1;
+    }
+
     packet->sender_id = sender_id;
     packet->target_id = target_id;
     packet->cmd = cmd;
     packet->payload_size = payload_size;
-    memcpy(packet->payload, payload, payload_size);
+    if (payload_size > 0)
+    {
+        memcpy(packet->payload, payload, payload_size);
+    }
+    if (payload_size < MAX_PAYLOAD_SIZE)
+    {
+        memset(packet->payload + payload_size, 0, MAX_PAYLOAD_SIZE - payload_size);
+    }
     packet->crc = 0; // TODO: Implement CRC
     return 0;
 }

@@ -13,13 +13,13 @@
 
 // IMPORTANT: All 16-bit values are the unit * 100 (e.g. 20.00 bar = 2000)
 
-struct CortexData {
+struct __attribute__((__packed__)) CortexData {
     RocketState rocket_state;
     uint8_t sd_log_status;
-    uint32_t time_since_state_start_ms;
+    uint32_t time_state_start_ms;
 };
 
-struct NavigatorData {
+struct __attribute__((__packed__)) NavigatorData {
     uint16_t altitude;
     uint16_t velocity;
     uint16_t acceleration;
@@ -27,7 +27,7 @@ struct NavigatorData {
     uint32_t gps_longitude;
 };
 
-struct HydraUFData {
+struct __attribute__((__packed__)) HydraUFData {
     uint8_t valve_vent;
     uint8_t valve_pressurizing;
     uint16_t tank_top_pressure;
@@ -36,16 +36,17 @@ struct HydraUFData {
     uint16_t probe_temperature_3; 
 };
 
-struct HydraLFData {
+struct __attribute__((__packed__)) HydraLFData {
     uint8_t valve_abort;
     uint8_t valve_main;
     uint16_t tank_bottom_pressure;
     uint16_t chamber_pressure;
     uint16_t probe_temperature_1;
     uint16_t probe_temperature_2;
+    uint16_t chamber_temperature;
 };
 
-struct HydraFSData {
+struct __attribute__((__packed__)) HydraFSData {
     uint8_t valve_n2_fill;
     uint8_t valve_n2_purge;
     uint8_t valve_ox_fill;
@@ -56,21 +57,21 @@ struct HydraFSData {
     uint16_t ox_temperature;
 };
 
-struct LiftTankData {
-    float tank_weight;
+struct __attribute__((__packed__)) LiftTankData {
+    int16_t tank_weight; // unit * 100
 };
 
-struct LiftBottleData {
-    float bottle_weight;
+struct __attribute__((__packed__)) LiftBottleData {
+    int16_t bottle_weight; // unit * 100
 };
 
-struct LiftThrustData {
-    float thrust_1;
-    float thrust_2;
-    float thrust_3;
+struct __attribute__((__packed__)) LiftThrustData {
+    int16_t thrust_1; // unit * 100
+    int16_t thrust_2; // unit * 100
+    int16_t thrust_3; // unit * 100
 };
 
-struct RocketData {
+struct __attribute__((__packed__)) RocketData {
     CortexData cortexData;
     NavigatorData navigatorData;
     HydraUFData hydraUFData;
