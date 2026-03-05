@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <SPI.h>
 #include "Sensors.h"
 #include "Display.h"
 #include "Sensors/buzzer.h"
@@ -24,6 +25,11 @@ void setup() {
   Wire1.setSCL(I2C_SCL_PIN1);
   Wire1.begin();
   Serial.println("I2C1 initialized");
+
+  SPI1.setMISO(SPI_MISO_PIN);
+  SPI1.setMOSI(SPI_MOSI_PIN);
+  SPI1.setSCK(SPI_SCK_PIN);
+  SPI1.begin(); 
 
   if (InitializeSensors() == 0) {
     Serial.println("Sensors initialized.");

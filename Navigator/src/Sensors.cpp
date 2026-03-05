@@ -20,6 +20,11 @@ int InitializeSensors() {
         ret = -1;
     } else Serial.println("LPS22DF sensor initialized.");
 
+    if (InitializeBME280() != 0) {
+        Serial.println("Failed to initialize BME280.");
+        ret = -1;
+    } else Serial.println("BME280 sensor initialized.");
+
     return ret;
 }
 
@@ -41,6 +46,10 @@ int ConfigureSensors() {
         ret = -1;
     } else Serial.println("LPS22DF sensor configured.");
 
+    if (ConfigureBME280() != 0) {
+        Serial.println("Failed to configure BME280.");
+        ret = -1;
+    } else Serial.println("BME280 sensor configured.");
     // Resto dos Sensores
 
     return ret;
@@ -64,6 +73,13 @@ int ReadSensors() {
     if (IsLPS22DFReady()) {
         if (ReadLPS22DF(sensorData.lpsData) != 0) {
             Serial.println("Could not read from LPS22DF.");
+            return -1;
+        }
+    }
+
+    if (IsBME280Ready()) {
+        if (ReadBME280(sensorData.bmeData) != 0) {
+            Serial.println("Could not read from BME280.");
             return -1;
         }
     }

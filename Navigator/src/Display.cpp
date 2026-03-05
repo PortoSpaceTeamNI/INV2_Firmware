@@ -1,6 +1,12 @@
 #include "Display.h"
 
 void DisplayData(SensorDataResult *sensorData){
+    Serial.println("SENSOR BAY 1");
+    Serial.printf("BME: %.2f ºC, %.2f hPa, %.2f %%\n",
+        sensorData->bmeData.Temperature,
+        sensorData->bmeData.Pressure,
+        sensorData->bmeData.Humidity);
+    Serial.println("SENSOR BAY 2");
     Serial.printf("BMP: %.2f ºC, %.2f hPa, %.2f m\n", 
         sensorData->bmpData.Temperature, 
         sensorData->bmpData.Pressure, 

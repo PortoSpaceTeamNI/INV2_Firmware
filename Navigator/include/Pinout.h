@@ -15,8 +15,14 @@
 
 // ST LPS22DF - Barometric Pressure & Temperature Sensor
 #define LPS22DF_SCL_PIN I2C_SCL_PIN0
-#define LPS22DF_SDA_PIN I2C_SCL_PIN0
+#define LPS22DF_SDA_PIN I2C_SDA_PIN0
 #define LPS22DF_RDY_PIN 22
+
+// BME280 - Barometric Pressure, Temperature & Humidity Sensor
+#define BME280_MOSI_PIN 11 // SPI_MOSI_PIN
+#define BME280_MISO_PIN 8 // SPI_MISO_PIN
+#define BME280_SCK_PIN 10 // SPI_SCK_PIN
+#define BME280_CS_PIN 9
 
 //* I2C
 #define I2C_SDA_PIN0 20
