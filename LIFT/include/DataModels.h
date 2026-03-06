@@ -13,11 +13,11 @@ typedef enum {
 
 typedef union {
     struct {
-        int16_t loadcell1;
-        int16_t loadcell2;
-        int16_t loadcell3;
+        int64_t loadcell1;
+        int64_t loadcell2;
+        int64_t loadcell3;
     };
-    int16_t raw[3];
+    int64_t raw[3];
 } loadcells_t;
 
 typedef struct {
