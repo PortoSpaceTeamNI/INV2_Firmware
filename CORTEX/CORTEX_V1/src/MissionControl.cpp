@@ -297,7 +297,9 @@ void vMissionControlTask(void *pvParameters)
     {
       hadPacket = true;
       static packet_t ack;
-      uint8_t ack_payload[1] = {receivedPacket->cmd};
+      uint8_t ack_payload[MAX_PAYLOAD_SIZE] = {0};
+      ack_payload[0] = receivedPacket->cmd;
+      ack.payload_size = 1;
       if (create_packet(&ack, CORTEX_ID, receivedPacket->sender_id, CMD_NACK, ack_payload, sizeof(ack_payload)) != 0)
       {
         vTaskDelay(pdMS_TO_TICKS(5));
