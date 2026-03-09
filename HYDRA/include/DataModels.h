@@ -11,12 +11,31 @@ typedef enum {
     hydra_id_count,
 } hydra_id_t;
 
-typedef enum {
-    CMD_STATUS = 0,
-    CMD_VALVE_SET,
-    CMD_VALVE_MS,
+typedef enum
+{
+    CMD_NONE = 0,
+    CMD_STATUS,
+    CMD_ABORT,
+    CMD_STOP,
+    CMD_ARM,
+    CMD_FIRE,
+    CMD_FILL_EXEC,
+    CMD_MANUAL_EXEC,
     CMD_ACK,
-} cmd_t;
+    CMD_NACK,
+    cmd_count,
+} command_t;
+
+// Manual commands
+typedef enum
+{
+    CMD_MANUAL_SD_LOG_START,
+    CMD_MANUAL_SD_LOG_STOP,
+    CMD_MANUAL_SD_STATUS,
+    CMD_MANUAL_VALVE_STATE, 
+    CMD_MANUAL_VALVE_MS, // milliseconds to open/close valve
+    manual_cmd_count,
+} manual_command_t;
 
 typedef enum {
     VALVE_QUICK_DC_1 = 0,
