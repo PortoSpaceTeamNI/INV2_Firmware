@@ -6,6 +6,10 @@ void DisplayData(SensorDataResult *sensorData){
         sensorData->bmeData.Temperature,
         sensorData->bmeData.Pressure,
         sensorData->bmeData.Humidity);
+    Serial.printf("BMI323: T=%.2f C, A=%.2f %.2f %.2f m/s^2, G=%.2f %.2f %.2f rad/s\n",
+        sensorData->bmiData.Temperature,
+        sensorData->bmiData.AccelX, sensorData->bmiData.AccelY, sensorData->bmiData.AccelZ,
+        sensorData->bmiData.GyroX, sensorData->bmiData.GyroY, sensorData->bmiData.GyroZ);
     Serial.println("SENSOR BAY 2");
     Serial.printf("BMP: %.2f ºC, %.2f hPa, %.2f m\n", 
         sensorData->bmpData.Temperature, 

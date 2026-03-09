@@ -20,11 +20,11 @@ int InitializeSensors() {
         ret = -1;
     } else Serial.println("LPS22DF sensor initialized.");
 
-    if (InitializeBME280() != 0) {
-        Serial.println("Failed to initialize BME280.");
+    if (InitializeBMI323() != 0) {
+        Serial.println("Failed to initialize BMI323.");
         ret = -1;
-    } else Serial.println("BME280 sensor initialized.");
-
+    } else Serial.println("BMI323 sensor initialized.");
+ 
     return ret;
 }
 
@@ -46,10 +46,10 @@ int ConfigureSensors() {
         ret = -1;
     } else Serial.println("LPS22DF sensor configured.");
 
-    if (ConfigureBME280() != 0) {
-        Serial.println("Failed to configure BME280.");
+    if (ConfigureBMI323() != 0) {
+        Serial.println("Failed to configure BMI323.");
         ret = -1;
-    } else Serial.println("BME280 sensor configured.");
+    } else Serial.println("BMI323 sensor configured.");
     // Resto dos Sensores
 
     return ret;
@@ -77,9 +77,9 @@ int ReadSensors() {
         }
     }
 
-    if (IsBME280Ready()) {
-        if (ReadBME280(sensorData.bmeData) != 0) {
-            Serial.println("Could not read from BME280.");
+    if (IsBMI323Ready()) {
+        if (ReadBMI323(sensorData.bmiData) != 0) {
+            Serial.println("Could not read from BMI323.");
             return -1;
         }
     }
