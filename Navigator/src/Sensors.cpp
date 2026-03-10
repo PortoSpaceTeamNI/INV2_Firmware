@@ -2,23 +2,34 @@
 
 SensorDataResult sensorData;
 
+static bool bmpInitialized = false;
+static bool lsmInitialized = false;
+static bool lpsInitialized = false;
+
 int InitializeSensors() {
     int ret = 0;
 
     if (InitializeBMP581() != 0) {
         Serial.println("Failed to initialize BMP581.");
         ret = -1;
-    } else Serial.println("BMP581 sensor initialized.");
+    } else { bmpInitialized = true; Serial.println("BMP581 sensor initialized."); }
 
     if (InitializeLSM6DSO() != 0) {
         Serial.println("Failed to initialize LSM6DSO.");
         ret = -1;
-    } else Serial.println("LSM6DSO sensor initialized.");
-    
+    } else { lsmInitialized = true; Serial.println("LSM6DSO sensor initialized."); }
+
     if (InitializeLPS22DF() != 0) {
         Serial.println("Failed to initialize LPS22DF.");
         ret = -1;
-    } else Serial.println("LPS22DF sensor initialized.");
+    } else { lpsInitialized = true; Serial.println("LPS22DF sensor initialized."); }
+
+    /*
+    if (InitializeLIS2MDL() != 0) {
+        Serial.println("Failed to initialize LIS2MDL.");
+        ret = -1;
+    } else Serial.println("LIS2MDL sensor initialized.");
+    */
 
     return ret;
 }
@@ -26,22 +37,35 @@ int InitializeSensors() {
 int ConfigureSensors() {
     int ret = 0;
 
-    if (ConfigureBMP581() != 0) {
-        Serial.println("Failed to configure BMP581.");
-        ret = -1;
-    } else Serial.println("BMP581 sensor configured.");
+    if (bmpInitialized) {
+        if (ConfigureBMP581() != 0) {
+            Serial.println("Failed to configure BMP581.");
+            ret = -1;
+        } else Serial.println("BMP581 sensor configured.");
+    } else Serial.println("Skipping BMP581 configure (init failed).");
 
-    if (ConfigureLSM6DSO() != 0) {
-        Serial.println("Failed to configure LSM6DSO.");
-        ret = -1;
-    } else Serial.println("LSM6DSO sensor configured.");
+    if (lsmInitialized) {
+        if (ConfigureLSM6DSO() != 0) {
+            Serial.println("Failed to configure LSM6DSO.");
+            ret = -1;
+        } else Serial.println("LSM6DSO sensor configured.");
+    } else Serial.println("Skipping LSM6DSO configure (init failed).");
 
-    if (ConfigureLPS22DF() != 0) {
-        Serial.println("Failed to configure LPS22DF.");
-        ret = -1;
-    } else Serial.println("LPS22DF sensor configured.");
+    if (lpsInitialized) {
+        if (ConfigureLPS22DF() != 0) {
+            Serial.println("Failed to configure LPS22DF.");
+            ret = -1;
+        } else Serial.println("LPS22DF sensor configured.");
+    } else Serial.println("Skipping LPS22DF configure (init failed).");
 
-    // Resto dos Sensores
+    /*
+    if (lisInitialized) {
+        if (ConfigureLIS2MDL() != 0) {
+            Serial.println("Failed to configure LIS2MDL.");
+            ret = -1;
+        } else Serial.println("LIS2MDL sensor configured.");
+    } else Serial.println("Skipping LIS2MDL configure (init failed).");
+    */
 
     return ret;
 }
@@ -68,7 +92,13 @@ int ReadSensors() {
         }
     }
 
-    // Resto dos sensores
-
+    /*
+    if (IsLIS2MDLReady()) {
+        if (ReadLIS2MDL(sensorData.lisData) != 0) {
+            Serial.println("Could not read from LIS2MDL.");
+            return -1;
+        }
+    }
+    */
     return 0;
 }

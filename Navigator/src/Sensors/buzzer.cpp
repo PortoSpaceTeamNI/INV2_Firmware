@@ -1,15 +1,15 @@
-#include "Sensors/Buzzer.h"
+#include "Sensors/buzzer.h"
 
 void setup_buzzer() {
-    pinMode(BUZZER, OUTPUT);
+    pinMode(BUZZER_PIN, OUTPUT);
 }
 
 void play_buzzer(int frequency, int duration) {
-    tone(BUZZER, frequency, duration);
+    tone(BUZZER_PIN, frequency, duration);
 }
 
 void stop_buzzer() {
-    noTone(BUZZER);
+    noTone(BUZZER_PIN);
 }
 
 void play_buzzer_error() {
