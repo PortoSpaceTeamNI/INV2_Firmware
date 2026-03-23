@@ -1,7 +1,7 @@
 #include "Sensors.h"
 
 SensorDataResult sensorData;
-bool baro1_ready = false, baro2_ready = false, mag_ready = false;
+bool baro1_ready = false, baro2_ready = false, imu_ready = false, mag_ready = false;
 
 int InitializeSensors() {
     int ret = 0;
@@ -57,6 +57,7 @@ int ReadSensors() {
     }
 
     if (IsLSM6DSOReady()) { //IMU
+        imu_ready = true;
         if (ReadLSM6DSO(sensorData.lsmData) != 0) {
             Serial.println("Could not read from LSM6DSO.");
             return -1;

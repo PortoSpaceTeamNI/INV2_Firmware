@@ -15,12 +15,21 @@ struct MyQuaternion{
         inline MyQuaternion operator*(MyQuaternion B){
             MyQuaternion Q;
 
-            Q.qw = -B.qx * qx - B.qy * qy - B.qz * qz + B.qw * qw;
-            Q.qx = B.qx * qw + B.qy * qz - B.qz * qy + B.qw * qx;
-            Q.qy = -B.qx * qz + B.qy * qw + B.qz * qx + B.qw * qy;
-            Q.qz = B.qx * qy - B.qy * qx + B.qz * qw + B.qw * qz;
+            Q.qw = qw*B.qw - qx*B.qx - qy*B.qy - qz*B.qz;
+            Q.qx = qw*B.qx + qx*B.qw + qy*B.qz - qz*B.qy;
+            Q.qy = qw*B.qy - qx*B.qz + qy*B.qw + qz*B.qx;
+            Q.qz = qw*B.qz + qx*B.qy - qy*B.qx + qz*B.qw;
             
             return Q;
+        }
+
+        /// @brief Normalize the quaternion to unit length
+        inline void normalize(){
+            float norm = sqrt(qw*qw + qx*qx + qy*qy + qz*qz);
+                qw /= norm;
+                qx /= norm;
+                qy /= norm;
+                qz /= norm;
         }
 };
 
@@ -41,6 +50,14 @@ int quaternion_to_euler(MyQuaternion Q,  float *euler);
 /// @brief Transform orientation quaternion to rotation matrix
 /// @param q quaternion in question
 /// @return rotation matrix
-Matrix3f quaternion_to_rotation_matrix(MyQuaternion q);
+Eigen::Matrix3f quaternion_to_rotation_matrix(MyQuaternion q);
+
+/// @brief Small angle approximation for quaternion generation
+/// @param delta_theta 3 value array with small angle changes in roll, pitch and yaw
+MyQuaternion small_angle_quat(float delta_theta[3]);
+
+/// @brief Convert a float array of size 4 to MyQuaternion struct
+/// @param q float array with quaternion values in order w, x, y, z
+MyQuaternion floatArrayToQuaternion(const float q[4]);
 
 #endif

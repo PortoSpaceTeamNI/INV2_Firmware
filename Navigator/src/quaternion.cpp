@@ -1,4 +1,5 @@
-#include <quaternion.h>
+#include "quaternion.h"
+#include <ArduinoEigen.h>
 
 MyQuaternion euler_to_quaternion(float roll, float pitch, float yaw){
 
@@ -38,11 +39,46 @@ int quaternion_to_euler(MyQuaternion Q,  float *euler){
 }
 
 
-Matrix3f quaternion_to_rotation_matrix(MyQuaternion q){
+Eigen::Matrix3f quaternion_to_rotation_matrix(MyQuaternion q){
     
-    Matrix3f R;
+    Eigen::Matrix3f R;
     R << 1 - 2*(q.qy*q.qy + q.qz*q.qz),     2*(q.qx*q.qy - q.qz*q.qw),     2*(q.qx*q.qz + q.qy*q.qw),
              2*(q.qx*q.qy + q.qz*q.qw), 1 - 2*(q.qx*q.qx + q.qz*q.qz),     2*(q.qy*q.qz - q.qx*q.qw),
              2*(q.qx*q.qz - q.qy*q.qw),     2*(q.qy*q.qz + q.qx*q.qw), 1 - 2*(q.qx*q.qx + q.qy*q.qy);
     return R;
+}
+
+
+MyQuaternion small_angle_quat(float delta_theta[3]) {
+    float angle = sqrt(delta_theta[0]*delta_theta[0] + 
+                       delta_theta[1]*delta_theta[1] + 
+                       delta_theta[2]*delta_theta[2]);
+
+    if (angle < 1e-12f) {
+        return MyQuaternion{1.0f, 0.0f, 0.0f, 0.0f};  // identity
+    }
+
+    float axis[3];
+    axis[0] = delta_theta[0] / angle;
+    axis[1] = delta_theta[1] / angle;
+    axis[2] = delta_theta[2] / angle;
+
+    float half = 0.5f * angle;
+    float s = sinf(half);
+
+    return MyQuaternion{
+        cosf(half),       // w
+        axis[0]*s,        // x
+        axis[1]*s,        // y
+        axis[2]*s         // z
+    };
+}
+
+MyQuaternion floatArrayToQuaternion(const float q[4]) {
+    MyQuaternion quat;
+    quat.qw = q[0];
+    quat.qx = q[1];
+    quat.qy = q[2];
+    quat.qz = q[3];
+    return quat;
 }

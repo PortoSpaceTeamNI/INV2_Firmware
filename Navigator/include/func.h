@@ -1,17 +1,16 @@
 #ifndef FUNC_H
 #define FUNC_H
 
-#include <Eigen/Dense>
-#include <Eigen/Geometry>  // For Quaternion
+#include "Sensors.h"
+#include <ArduinoEigen.h>
+
+extern Eigen::MatrixXf x; // State vector for Kalman filter
 
 // Define a custom class for your helper functions
 class help_func {
 public:
-    // Small angle approximation for quaternion generation
-    static Eigen::Quaternionf small_angle_quat(const Eigen::Vector3f& delta_theta);
-
     // Skew-symmetric matrix for a 3D vector
-    static Eigen::Matrix3f skew(const Eigen::Vector3f& w);
+    static Eigen::Matrix3f skew(const float w[3]);
 
     // NED to Body frame conversion with quaternion (using roll, pitch, yaw)
     static Eigen::Vector3f ned_to_body_with_quaternion(const Eigen::Vector3f& mag_nav, float roll, float pitch, float yaw);
@@ -29,31 +28,24 @@ public:
     static std::pair<float, float> adaptive_fusion(float x1, float sigma1, float x2, float sigma2);
 
     // Apply attitude correction
-    static void apply_attitude_correction(Eigen::VectorXf& x, Eigen::Quaternionf& q_nom);
+    static void apply_attitude_correction(Eigen::MatrixXf *x, float *q_nom);
 };
 
-// Define a custom class for the EKF (Extended Kalman Filter)
-class ekf {
-public:
-    // EKF predict step
-    static void predict(Eigen::VectorXf& x, Eigen::MatrixXf& P, Eigen::Quaternionf& q_nom, 
-                        const Eigen::Vector3f& acc_body, const Eigen::Vector3f& gyro_body, 
-                        float Ts, const Eigen::MatrixXf& Q);
 
-    // EKF barometer update step
-    static void update_barometer(Eigen::VectorXf& x, Eigen::MatrixXf& P, float z_baro, 
-                                 const Eigen::MatrixXf& R_baro, int pz_idx = 11, int b_idx = 12);
+// EKF barometer update step
+void update_barometer(Eigen::MatrixXf *x, Eigen::MatrixXf *P, float *z_baro, Eigen::MatrixXf *R_baro, int pz_idx = 11, int b_idx = 12);
 
-    // EKF magnetometer update step
-    static void update_mag(Eigen::VectorXf& x, Eigen::MatrixXf& P, const Eigen::Quaternionf& q_nom,
-                           const Eigen::Vector3f& mag_meas, const Eigen::Vector3f& mag_ref, const Eigen::Matrix3f& R_mag);
-};
+// EKF magnetometer update step
+void update_mag(Eigen::MatrixXf *x, Eigen::MatrixXf *P, const float *q_nom, float mag_meas[3], float mag_ref[3], Eigen::MatrixXf *R_mag);
+
+void predict(Eigen::MatrixXf *x, Eigen::MatrixXf *P, float *q_nom, float acc_body[3], float gyro_body[3], float Ts, Eigen::MatrixXf *Q, Eigen::MatrixXf *F, Eigen::MatrixXf *P_pred);
+
 
 // A general update function (not specific to EKF, could be used for other updates)
 void update(const Eigen::VectorXf& y_pred, 
             const Eigen::VectorXf& y_sensor, 
             const Eigen::MatrixXf& H, 
-            Eigen::VectorXf& x, 
+            Eigen::MatrixXf& x, 
             Eigen::MatrixXf& P, 
             const Eigen::MatrixXf& R_sensor);
 
