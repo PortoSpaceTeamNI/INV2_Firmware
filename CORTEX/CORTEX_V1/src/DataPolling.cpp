@@ -2,6 +2,7 @@
 #include "Communications.h"
 #include "Commands.h"
 #include "Configs.h"
+#include "Pinout.h"
 
 #include <Arduino.h>
 #include <FreeRTOS.h>
@@ -257,6 +258,7 @@ void processStatusAck(packet_t *ack)
       memcpy(&rocketData.liftBottleData, statusPayload, sizeof(LiftBottleData));
       break;
     case LIFT_THRUST_ID:
+      tone(BUZZER_PIN, 2000, 50); // Beep to indicate received thrust data
       memcpy(&rocketData.liftThrustData, statusPayload, sizeof(LiftThrustData));
       break;
     default:
