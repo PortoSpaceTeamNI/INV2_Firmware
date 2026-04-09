@@ -60,17 +60,17 @@ struct __attribute__((__packed__)) HydraFSData {
 };
 
 struct __attribute__((__packed__)) LiftTankData {
-    int16_t tank_weight; // unit * 100
+    int32_t tank_weight; // unit * 100
 };
 
 struct __attribute__((__packed__)) LiftBottleData {
-    int16_t bottle_weight; // unit * 100
+    int32_t bottle_weight; // unit * 100
 };
 
 struct __attribute__((__packed__)) LiftThrustData {
-    int16_t thrust_1; // unit * 100
-    int16_t thrust_2; // unit * 100
-    int16_t thrust_3; // unit * 100
+    int32_t thrust_1; // unit * 100
+    int32_t thrust_2; // unit * 100
+    int32_t thrust_3; // unit * 100
 };
 
 struct __attribute__((__packed__)) RocketData {

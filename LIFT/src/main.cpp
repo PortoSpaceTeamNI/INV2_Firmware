@@ -24,15 +24,15 @@ data_t my_data = {0};
 SemaphoreHandle_t data_mutex = NULL;
 
 //#define DEBUG_LOADCELLS
-#define DEBUG_COMMS
+//#define DEBUG_COMMS
 
 void run_command(packet_t *packet)
 {
-    if (packet->cmd == CMD_STATUS && packet->target_id == DEFAULT_ID)
+    if (packet->cmd == CMD_STATUS && packet->target_id == MY_ID)
     {
         // send status packet
         packet_t status_packet;
-        status_packet.sender_id = DEFAULT_ID;
+        status_packet.sender_id = MY_ID;
         status_packet.target_id = packet->sender_id;
         status_packet.cmd = CMD_ACK;
         status_packet.payload_size = sizeof(data_t) + 1; // +1 for cmd ack
@@ -59,6 +59,13 @@ void run_command(packet_t *packet)
         if (CRC_ENABLED)
             status_packet.crc = crc((uint8_t *)&status_packet,
                                     HEADER_SIZE + status_packet.payload_size);
+        Serial.println("Sending status packet...");
+        for (int i = 0; i < status_packet.payload_size + HEADER_SIZE + 2; i++)
+        {
+            Serial.print(((uint8_t *)&status_packet)[i], HEX);
+            Serial.print(" ");
+        }
+        Serial.println();
         write_packet(&status_packet);
     }
 }
@@ -129,9 +136,6 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(USB_BAUD_RATE); // USBC serial
     Serial.println("Setting up...");
-    while(!Serial) {
-        // Wait for Serial to be ready
-    }
     //sd_init(SD_CS_PIN); // SD card
     Serial.println("Initializing peripherals...");
     rs485_init(); // RS-485 serial

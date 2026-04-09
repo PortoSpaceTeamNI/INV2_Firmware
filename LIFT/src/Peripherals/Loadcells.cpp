@@ -51,7 +51,6 @@ static void calibrate_one(HX711 &lc, const char *name) {
 
 int loadcells_setup(void)
 {
-
     loadcell1.begin(LOADCELL1_DOUT_PIN, LOADCELL1_SCK_PIN);
     #if MY_ID == LIFT_THRUST_ID
         loadcell2.begin(LOADCELL2_DOUT_PIN, LOADCELL2_SCK_PIN);
@@ -64,20 +63,22 @@ int loadcells_setup(void)
         loadcell3.tare(10);
     #endif
 
-    loadcell1.set_scale(LOADCELL1_SCALE);
     #if MY_ID == LIFT_THRUST_ID
-        loadcell2.set_scale(LOADCELL2_SCALE);
-        loadcell3.set_scale(LOADCELL3_SCALE);
+         loadcell1.set_scale(THRUST_LOADCELL1_SCALE);
+         loadcell2.set_scale(THRUST_LOADCELL2_SCALE);
+         loadcell3.set_scale(THRUST_LOADCELL3_SCALE);
+    #elif MY_ID == LIFT_BOTTLE_ID
+        loadcell1.set_scale(BOTTLE_LOADCELL1_SCALE);
     #endif
     return 0;
 }
 
 int read_loadcells(data_t *data)
 {
-    data->loadcells.loadcell1 = loadcell1.get_value();
+    data->loadcells.loadcell1 = loadcell1.get_units() / 10;
     #if MY_ID == LIFT_THRUST_ID
-        data->loadcells.loadcell2 = loadcell2.get_value();
-        data->loadcells.loadcell3 = loadcell3.get_value();
+        data->loadcells.loadcell2 = loadcell2.get_units() / 10;
+        data->loadcells.loadcell3 = loadcell3.get_units() / 10;
     #endif
     return 0;
 }

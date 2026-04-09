@@ -12,7 +12,7 @@
 #define RS485_RESPONSE_TIMEOUT_MS 8
 
 // RS485 polling interval (ms)
-#define STATUS_POLL_INTERVAL_MS 15
+#define STATUS_POLL_INTERVAL_MS 20
 
 // RS485 transceiver direction pin levels
 #define RS485_TX_ENABLE_LEVEL HIGH

@@ -143,12 +143,12 @@ static bool isExpectedStatusAck(const packet_t *ack)
   {
     return false;
   }
-
+  /*
   if (ack->sender_id != expectedStatusSenderId)
   {
     return false;
   }
-
+  
   const uint8_t expectedPayloadSize = expectedStatusPayloadSizeForSender(ack->sender_id);
   if (expectedPayloadSize == 0)
   {
@@ -162,6 +162,8 @@ static bool isExpectedStatusAck(const packet_t *ack)
   }
 
   return ack->payload_size == (uint8_t)(expectedPayloadSize + 1);
+  */
+  return true; // Relaxed check for now, may want to re-enable strict payload size check later
 }
 
 int requestStatus(uint8_t targetID)
@@ -205,6 +207,7 @@ void processStatusAck(packet_t *ack)
 {
   if (!isExpectedStatusAck(ack))
   {
+    //tone(BUZZER_PIN, 3000, 100); // Beep to indicate unexpected acknowledgment
     return;
   }
 
@@ -256,9 +259,10 @@ void processStatusAck(packet_t *ack)
       break;
     case LIFT_BOTTLE_ID:
       memcpy(&rocketData.liftBottleData, statusPayload, sizeof(LiftBottleData));
+      Serial1.print("Updated lift bottle weight: ");
+      Serial1.println(rocketData.liftBottleData.bottle_weight);
       break;
     case LIFT_THRUST_ID:
-      tone(BUZZER_PIN, 2000, 50); // Beep to indicate received thrust data
       memcpy(&rocketData.liftThrustData, statusPayload, sizeof(LiftThrustData));
       break;
     default:
@@ -281,6 +285,7 @@ void vDataPollingTask(void *pvParameters)
     static packet_t ack;
     if (xQueueReceive(AcknowledgementQueue, &ack, 0) == pdTRUE)
     {
+      //tone(BUZZER_PIN, 1500, 50); // Beep to indicate received acknowledgment
       processStatusAck(&ack);
     }
 

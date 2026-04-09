@@ -26,12 +26,14 @@ void write_packet(packet_t *packet)
         buff[size++] = packet->payload[i];
     buff[size++] = ((packet->crc >> 8) & 0xff);
     buff[size++] = ((packet->crc) & 0xff);
+    /*
     for (int i = 0; i < size; i++) {
         Serial.print(buff[i], HEX);
         Serial.print(" ");
     }
     Serial.println();
     Serial.println("Packet sent!");
+    */
     rs485_send(buff, size);
 }
 
@@ -144,7 +146,7 @@ packet_t *read_packet(int *error)
     else if (state == END)
     {
         state = SYNC;
-        if (packet.target_id == DEFAULT_ID ||
+        if (packet.target_id == MY_ID ||
             packet.target_id == BROADCAST_ID)
         {
             

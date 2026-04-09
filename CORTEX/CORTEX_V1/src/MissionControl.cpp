@@ -108,6 +108,13 @@ int processFillCommand(packet_t *packet)
   (buf)[(i) + 1] = ((uint16_t)(val)     ) & 0xFF; \
 } while(0)
 
+#define WRITE_U32_BE(buf, i, val) do { \
+  (buf)[(i)]     = ((uint32_t)(val) >> 24) & 0xFF; \
+  (buf)[(i) + 1] = ((uint32_t)(val) >> 16) & 0xFF; \
+  (buf)[(i) + 2] = ((uint32_t)(val) >> 8) & 0xFF; \
+  (buf)[(i) + 3] = ((uint32_t)(val)     ) & 0xFF; \
+} while(0)
+
 static int buildStatusAckPayload(packet_t *ack)
 {
   if (xSemaphoreTake(rocketDataMutex, pdMS_TO_TICKS(10)) != pdTRUE)
@@ -166,15 +173,15 @@ static int buildStatusAckPayload(packet_t *ack)
   WRITE_U16_BE(p, idx, rocketData.hydraFSData.ox_temperature); idx += 2;
 
   // [28-29] lift fill-station n2o load cell (bottle weight)
-  WRITE_U16_BE(p, idx, (uint16_t)rocketData.liftBottleData.bottle_weight); idx += 2;
-  // [30-31] lift thrust load cell 1
-  WRITE_U16_BE(p, idx, (uint16_t)rocketData.liftThrustData.thrust_1); idx += 2;
-  // [32-33] lift thrust load cell 2
-  WRITE_U16_BE(p, idx, (uint16_t)rocketData.liftThrustData.thrust_2); idx += 2;
-  // [34-35] lift thrust load cell 3
-  WRITE_U16_BE(p, idx, (uint16_t)rocketData.liftThrustData.thrust_3); idx += 2;
+  WRITE_U32_BE(p, idx, (uint32_t)rocketData.liftBottleData.bottle_weight); idx += 4;
+  // [30-33] lift thrust load cell 1
+  WRITE_U32_BE(p, idx, (uint32_t)rocketData.liftThrustData.thrust_1); idx += 4;
+  // [34-37] lift thrust load cell 2
+  WRITE_U32_BE(p, idx, (uint32_t)rocketData.liftThrustData.thrust_2); idx += 4;
+  // [38-41] lift thrust load cell 3
+  WRITE_U32_BE(p, idx, (uint32_t)rocketData.liftThrustData.thrust_3); idx += 4;
 
-  ack->payload_size = idx; // 36 bytes
+  ack->payload_size = idx; // 42 bytes
   xSemaphoreGive(rocketDataMutex);
   return 0;
 }
