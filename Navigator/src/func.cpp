@@ -143,92 +143,163 @@ void help_func::apply_attitude_correction(Eigen::MatrixXf *x, float *q_nom)
     (*x).block(0, 0, 3, 1).setZero();
 }
 
-float acc_world_old[3] = {0.0f, 0.0f, 0.0f};
+const float DEG2RAD = M_PI / 180.0f;
+float q_nom[4] = {1,0,0,0}; // w, x, y, z
+float acc_body[3] = {0, 0, 0}; // ax, ay, az
+float gyro_body[3] = {0, 0, 0}; // gx, gy, 
 
+static int kalman_count = 0;
+const int LOOPS = 10; // skip first 10 iterations
 
-void predict(Eigen::MatrixXf *x, Eigen::MatrixXf *P, float *q_nom, float acc_fused[3],
-    float gyro_body[3], float Ts, Eigen::MatrixXf *Q, Eigen::MatrixXf *F, Eigen::MatrixXf *P_pred) {
+void predict(Eigen::MatrixXf *x, Eigen::MatrixXf *P, float acc_fused[3],
+    float gyro_body[3], uint32_t Ts_us, Eigen::MatrixXf *Q, Eigen::MatrixXf *F, Eigen::MatrixXf *P_pred) {
+    
+    static float avg_gx[10] = {0}, avg_gy[10] = {0}, avg_gz[10] = {0};
+    static float sum_gx = 0, sum_gy = 0, sum_gz = 0;
+    static uint8_t idx = 0;
+    
+    // Add current gyro reading to moving average
+    sum_gx += gyro_body[0];
+    sum_gx -= avg_gx[idx];
+    avg_gx[idx] = gyro_body[0];
 
-    float bimu[3] = {(*x)(3), (*x)(4), (*x)(5) };          // imu bias
-    float bg[3] = {(*x)(6), (*x)(7), (*x)(8) };            // gyro biases
-    float v[3] = { (*x)(9), (*x)(10), (*x)(11) };          // velocity
-    //Serial.print(" v_x = "); Serial.print(v[0]);
-    //Serial.print(" v_y = "); Serial.print(v[1]);
-    //Serial.print(" v_z = "); Serial.print(v[2]);
-    float p[3] = { (*x)(12), (*x)(13), (*x)(14) };         // position              
-    //Serial.print(" p_z = "); Serial.print(p[2]);
+    sum_gy += gyro_body[1];
+    sum_gy -= avg_gy[idx];
+    avg_gy[idx] = gyro_body[1];
 
-    // Correct angular velocity - using microseconds directly
+    sum_gz += gyro_body[2];
+    sum_gz -= avg_gz[idx];
+    avg_gz[idx] = gyro_body[2];
+
+    // Use averaged gyro for delta calculation
+    float gyro_avg[3] = {
+        sum_gx / 10.0f,
+        sum_gy / 10.0f,
+        sum_gz / 10.0f
+    };
+
+    static float avg_ax[10] = {0}, avg_ay[10] = {0}, avg_az[10] = {0};
+    static float sum_ax = 0, sum_ay = 0, sum_az = 0;
+
+    sum_ax += acc_fused[0] - avg_ax[idx];
+    sum_ay += acc_fused[1] - avg_ay[idx];
+    sum_az += acc_fused[2] - avg_az[idx];
+
+    avg_ax[idx] = acc_fused[0];
+    avg_ay[idx] = acc_fused[1];
+    avg_az[idx] = acc_fused[2];
+
+    float acc_avg[3] = {
+        sum_ax / 10.0f,
+        sum_ay / 10.0f,
+        sum_az / 10.0f
+    };
+    
+    idx = (idx + 1) % 10; // rotate buffer
+
+    const float dt = Ts_us * 1e-6f;
+
+    float bimu[3] = {(*x)(3), (*x)(4), (*x)(5)};          // imu bias
+    float bg[3] = {(*x)(6), (*x)(7), (*x)(8)};            // gyro biases
+    float v[3] = {(*x)(9), (*x)(10), (*x)(11)};          // velocity
+    float p[3] = {(*x)(12), (*x)(13), (*x)(14)};         // position   
+
+    // Correct angular velocity 
     float delta[3];
     for(int i=0;i<3;i++){
-        delta[i] = (gyro_body[i] - bg[i]) * Ts; 
+        delta[i] = (gyro_avg[i] - bg[i]) * dt; // gyro in rad/s
     }
 
+    //Serial.print(" wx = "); Serial.print(gyro_avg[0]);
+    //Serial.print(" wy = "); Serial.print(gyro_avg[1]);
+    //Serial.print(" wz = "); Serial.print(gyro_avg[2]);
+
+    //Serial.print(" quat: "); Serial.print(q_nom[0]); Serial.print(", "); Serial.print(q_nom[1]); Serial.print(", "); Serial.print(q_nom[2]); Serial.print(", "); Serial.print(q_nom[3]);
+
     MyQuaternion dq = small_angle_quat(delta); 
-    MyQuaternion q1 {q_nom[0], q_nom[1], q_nom[2], q_nom[3]};
+    MyQuaternion q1 = floatArrayToQuaternion(q_nom);
     MyQuaternion q_nom_updated = q1 * dq;  // Apply small-angle correction
     q_nom_updated.normalize();  // Normalize the result
+
     q_nom[0] = q_nom_updated.qw;
     q_nom[1] = q_nom_updated.qx;
     q_nom[2] = q_nom_updated.qy;
     q_nom[3] = q_nom_updated.qz;
 
-    float acc_body[3] = {
-    acc_fused[0] - bimu[0],
-    acc_fused[1] - bimu[1],
-    acc_fused[2] - bimu[2]
-    };
+    /*float euler[3];
+    quaternion_to_euler(q_nom_updated, euler);
+    Serial.print(" roll = "); Serial.print(euler[0]);
+    Serial.print(" pitch = "); Serial.print(euler[1]);
+    Serial.print(" yaw = "); Serial.print(euler[2]);*/
 
-    Eigen::Matrix3f R = quaternion_to_rotation_matrix(q_nom_updated);  // Rotation from body to nav frame   
-    // Transform acceleration to world frame (including gravity)
-    float acc_world[3] = {R(0,0)*acc_body[0] + R(0,1)*acc_body[1] + R(0,2)*acc_body[2],
-                          R(1,0)*acc_body[0] + R(1,1)*acc_body[1] + R(1,2)*acc_body[2],
-                          R(2,0)*acc_body[0] + R(2,1)*acc_body[1] + R(2,2)*acc_body[2] - 9.81f};
+    Eigen::Matrix3f R = quaternion_to_rotation_matrix(q_nom_updated);  // Rotation from body to nav frame
     
-    /*acc_world[0] -= acc_world_old[0];
-    acc_world[1] -= acc_world_old[1];
-    acc_world[2] -= acc_world_old[2];
-    acc_world_old[0] = acc_world[0];
-    acc_world_old[1] = acc_world[1];
-    acc_world_old[2] = acc_world[2];*/
+    float acc_body[3] = {acc_avg[0], acc_avg[1], acc_avg[2]};
 
+    Eigen::Vector3f acc_body_vec(acc_body[0], acc_body[1], acc_body[2]);
+    Eigen::Vector3f gravity_nav(0, 0, -9.8f); // downward
+    Eigen::Vector3f gravity_body = R.transpose() * gravity_nav;
 
-    //Serial.print(" acc_world_x = "); Serial.print(acc_world[0]);
-    //Serial.print(" acc_world_y = "); Serial.print(acc_world[1]);
-    Serial.print(" acc_world_z = "); Serial.print(acc_world[2]);
+    Eigen::Vector3f acc_body_corrected2 = acc_body_vec - gravity_body;
+    Eigen::Vector3f acc_world2 = R * acc_body_corrected2;
 
-    // State propagation (position and velocity update)
-    float v_new[3] = {v[0] + acc_world[0] * Ts,
-                      v[1] + acc_world[1] * Ts,
-                      v[2] + acc_world[2] * Ts};
+    float acc_world[3] = {acc_world2(0), acc_world2(1), acc_world2(2)};
+    acc_world[0] = truncf(acc_world[0] * 10.0f) / 10.0f;
+    acc_world[1] = truncf(acc_world[1] * 10.0f) / 10.0f;
+    acc_world[2] = truncf(acc_world[2] * 10.0f) / 10.0f;
 
-    float p_new[3] = {(float)(p[0] + v[0] * Ts + 0.5f * acc_world[0] * Ts * Ts),
-                      (float)(p[1] + v[1] * Ts + 0.5f * acc_world[1] * Ts * Ts),
-                      (float)(p[2] + v[2] * Ts + 0.5f * acc_world[2] * Ts * Ts)};
+    float acc_body_corrected[3] = {acc_body_corrected2(0), acc_body_corrected2(1), acc_body_corrected2(2)};
 
-    (*F).block<3,3>(0,6) = -Eigen::Matrix3f::Identity() * Ts; // dtheta_dbg
-    (*F).block<3,3>(9,0) = -R * helper.skew(acc_body) * Ts; // dv/dtheta
-    (*F).block<3,3>(9,3) = -R * Ts; // dv/dbimu
-    (*F).block<3,3>(12,9) = Eigen::Matrix3f::Identity() * Ts; // dp/dv
+    /*const float GRAVITY = 9.81f;
+    Eigen::Vector3f gravity_nav(0.0f, 0.0f, GRAVITY); // Rotate gravity to body frame using the quaternion (nav to body rotation)
+    Eigen::Vector3f gravity_body = R.transpose() * gravity_nav; // Subtract gravity from body frame acceleration
+    float acc_body_corrected[3] = { acc_body[0] - gravity_body[0], acc_body[1] - gravity_body[1], acc_body[2] - gravity_body[2] }; // Transform corrected acceleration to navigation frame
+    float acc_world[3] = {R(0,0)*acc_body_corrected[0] + R(0,1)*acc_body_corrected[1] + R(0,2)*acc_body_corrected[2],
+                          R(1,0)*acc_body_corrected[0] + R(1,1)*acc_body_corrected[1] + R(1,2)*acc_body_corrected[2],
+                          R(2,0)*acc_body_corrected[0] + R(2,1)*acc_body_corrected[1] + R(2,2)*acc_body_corrected[2]};*/
+
+    //Serial.print("  acc_world_x = "); Serial.print(acc_world[0]);
+    //Serial.print("  acc_world_y = "); Serial.print(acc_world[1]);
+    //Serial.print("  acc_world_z = "); Serial.print(acc_world[2]);
+
+    if (kalman_count < LOOPS) {
+        kalman_count++;
+        return; // Skip prediction for first few iterations
+    } else{
         
-    (*x)(0) = 0.0f;
-    (*x)(1) = 0.0f;
-    (*x)(2) = 0.0f;
-    (*x)(3) = bimu[0];
-    (*x)(4) = bimu[1];
-    (*x)(5) = bimu[2];
-    (*x)(6) = bg[0];
-    (*x)(7) = bg[1];
-    (*x)(8) = bg[2];
-    (*x)(9) = v_new[0];
-    (*x)(10) = v_new[1];
-    (*x)(11) = v_new[2];
-    (*x)(12) = p_new[0];
-    (*x)(13) = p_new[1];
-    (*x)(14) = p_new[2];
+        float v_new[3] = {v[0] + acc_world[0] * dt,
+                          v[1] + acc_world[1] * dt,
+                          v[2] + acc_world[2] * dt};
 
+        float p_new[3] = {(float)(p[0] + v[0] * dt + 0.5f * acc_world[0] * dt * dt),
+                          (float)(p[1] + v[1] * dt + 0.5f * acc_world[1] * dt * dt),
+                          (float)(p[2] + v[2] * dt + 0.5f * acc_world[2] * dt * dt)};
     
-    *P_pred = (*F) * (*P) * (*F).transpose() + *Q;
+
+        (*F).block<3,3>(0,6) = -Eigen::Matrix3f::Identity() * dt; // dtheta_dbg
+        (*F).block<3,3>(9,0) = -R * helper.skew(acc_body_corrected) * dt; // dv/dtheta
+        (*F).block<3,3>(9,3) = -R * dt; // dv/dbimu
+        (*F).block<3,3>(12,9) = Eigen::Matrix3f::Identity() * dt; // dp/dv
+            
+        (*x)(0) = 0.0f;
+        (*x)(1) = 0.0f;
+        (*x)(2) = 0.0f;
+        (*x)(3) = bimu[0];
+        (*x)(4) = bimu[1];
+        (*x)(5) = bimu[2];
+        (*x)(6) = bg[0];
+        (*x)(7) = bg[1];
+        (*x)(8) = bg[2];
+        (*x)(9) = v_new[0];
+        (*x)(10) = v_new[1];
+        (*x)(11) = v_new[2];
+        (*x)(12) = p_new[0];
+        (*x)(13) = p_new[1];
+        (*x)(14) = p_new[2];
+
+        
+        *P_pred = (*F) * (*P) * (*F).transpose() + *Q;
+    }
 
     //std::cout << "x_pred: \n" << x_pred.transpose() << std::endl;
     //std::cout << "P_pred: \n" << P_pred << std::endl;

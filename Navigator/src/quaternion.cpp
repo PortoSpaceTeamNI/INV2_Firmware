@@ -45,7 +45,7 @@ Eigen::Matrix3f quaternion_to_rotation_matrix(MyQuaternion q){
     R << 1 - 2*(q.qy*q.qy + q.qz*q.qz),     2*(q.qx*q.qy - q.qz*q.qw),     2*(q.qx*q.qz + q.qy*q.qw),
              2*(q.qx*q.qy + q.qz*q.qw), 1 - 2*(q.qx*q.qx + q.qz*q.qz),     2*(q.qy*q.qz - q.qx*q.qw),
              2*(q.qx*q.qz - q.qy*q.qw),     2*(q.qy*q.qz + q.qx*q.qw), 1 - 2*(q.qx*q.qx + q.qy*q.qy);
-    return R;
+    return R; 
 }
 
 

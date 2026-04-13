@@ -37,6 +37,8 @@ void setup() {
     Serial.println("Sensors Configured.");
   } else Serial.println("One or more sensors failed to configure.");
 
+  initKalmanMatrices();
+
   Serial.println("Setup complete.");
   //play_buzzer_success();
 }
@@ -45,7 +47,7 @@ unsigned long t_prev = 0;
 void loop() {
 
   unsigned long t_now = micros(); 
-  float Ts = (t_now - t_prev) * 1e-6f; 
+  uint32_t Ts_us = t_now - t_prev; 
   t_prev = t_now;
 
   if (ReadSensors() != 0) {
@@ -55,15 +57,16 @@ void loop() {
   
   // x = [delta_theta(3), bimu(3), bg(3), v(3), p(3), bias_baro]
 
-  runKalmanFilter(&sensorData, &x, Ts);
-  Serial.print(" accx = "); Serial.print(sensorData.lsmData.AccelZ);
-  Serial.print(" accy = "); Serial.print(sensorData.lsmData.AccelY);
-  Serial.print(" accz = "); Serial.print(sensorData.lsmData.AccelX);
+  runKalmanFilter(&sensorData, &x, Ts_us);
+  //Serial.print(" accx = "); Serial.print(-sensorData.lsmData.AccelZ);
+  //Serial.print(" accy = "); Serial.print(-sensorData.lsmData.AccelY);
+  //Serial.print(" accz = "); Serial.print(sensorData.lsmData.AccelX);
   //Serial.print(" vx = "); Serial.print(x(9));
   //Serial.print(" vy = "); Serial.print(x(10));
   //Serial.print(" vz = "); Serial.print(x(11));
   //Serial.print(" x = "); Serial.print(x(12));
   //Serial.print(" y = "); Serial.print(x(13));
-  Serial.print(" z = "); Serial.println(x(14));
+  //Serial.print(" z = ");
+  Serial.println(x(14));
   //Serial.print(" Ts = "); Serial.println(Ts);  
 }

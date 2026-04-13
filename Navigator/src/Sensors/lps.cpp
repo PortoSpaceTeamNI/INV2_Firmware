@@ -30,6 +30,6 @@ int ReadLPS22DF(LPS22DFDataResult &result)
 {
     result.Pressure = lps.readPressureMillibars(); // mBar = hPa
     result.Temperature = lps.readTemperatureC();
-    result.Altitude = lps.pressureToAltitudeMeters(result.Pressure);
+    result.Altitude = lps.pressureToAltitudeMeters(result.Pressure, 1030.0); // standard sea level pressure in mBar = hPa
     return 0;
 }

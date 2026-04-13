@@ -30,13 +30,39 @@ Eigen::MatrixXf x(16,1);  // 16 rows, 1 column
 Eigen::MatrixXf P = Eigen::MatrixXf::Identity(16,16); // Initial covariance
 Eigen::MatrixXf P_pred = Eigen::MatrixXf::Identity(16,16);
 Eigen::MatrixXf F = Eigen::MatrixXf::Identity(16,16); // discrete-time state transition Jacobian 
-Eigen::Vector4f q_nom(1,0,0,0); // Quaternion
 
 // Sensor noise matrices
-float sigma_baro1 = 0.002, sigma_baro2 = 0.002, sigma_mag = 0.03;
-float sigma_acc1 = 1, sigma_acc2 = 1, sigma_gyro1 = 0.56*M_PI/180, sigma_gyro2 = 0.304*M_PI/180; 
+float sigma_baro1 = 0.001f, sigma_baro2 = 0.001f, sigma_mag = 0.03f;
+float sigma_acc1 = 3.0f, sigma_acc2 = 1.0f, sigma_gyro1 = 0.5f, sigma_gyro2 = 0.5f; 
 
-Eigen::MatrixXf Q = Eigen::MatrixXf::Identity(16,16)*sigma_acc1*sigma_acc1; // Process noise covariance
+Eigen::MatrixXf Q = Eigen::MatrixXf::Zero(16,16); // Process noise covariance
+
+void initKalmanMatrices() {
+    // Attitude error (gyro noise)
+    float sigma_theta = 0.5f;
+    Q.block(0,0,3,3) = Eigen::Matrix3f::Identity() * sigma_theta * sigma_theta;
+
+    // Acc bias
+    Q(3,3) = sigma_acc2 * sigma_acc2;
+    Q(4,4) = sigma_acc2 * sigma_acc2;
+    Q(5,5) = sigma_acc1 * sigma_acc1;
+
+    // Gyro bias
+    Q.block(6,6,3,3) = Eigen::Matrix3f::Identity() * sigma_gyro1 * sigma_gyro1;
+
+    //velocity
+    Q(9,9) = sigma_acc2 * sigma_acc2;
+    Q(10,10) = sigma_acc2 * sigma_acc2;
+    Q(11,11) = sigma_acc1 * sigma_acc1;
+
+    //position
+    Q(12,12) = sigma_acc2 * sigma_acc2;
+    Q(13,13) = sigma_acc2 * sigma_acc2;
+    Q(14,14) = sigma_acc1 * sigma_acc1;
+
+    // Baro bias
+    Q(15,15) = sigma_baro1 * sigma_baro1;
+}
 
 Eigen::MatrixXf RR1 = Eigen::MatrixXf::Identity(16,16) * sigma_baro1 * sigma_baro1;   // baro1
 Eigen::MatrixXf RR2 = Eigen::MatrixXf::Identity(16,16) * sigma_baro2 * sigma_baro2; // baro2
@@ -52,6 +78,7 @@ float gyro0[3] = {0, 0, 0};
 
 int count_mag = 0;
 int count_Q   = 0;
+float altitude_local = 0;
 
 bool parachute_opened1 = false, parachute_opened2 = false;
 
@@ -64,19 +91,22 @@ float z_fused;
 float acc_fused[3], gyro_fused[3];
 float baro_offset = 0;
 bool baro_offset_set = false;
+bool gyro_offset_set = false;
 float bias;
+float gyro_offset[3] = {0, 0, 0};
 static bool initialized = false;
+Eigen::MatrixXf R_baro(1,1);
 
 
-void runKalmanFilter(SensorDataResult *sensorData, Eigen::MatrixXf *x, float Ts) {
+void runKalmanFilter(SensorDataResult *sensorData, Eigen::MatrixXf *x, uint32_t Ts_us) {
     
     /* Calculate filter coefficients
-    const float fs_hz = 1.0f / Ts_us;  // Sample rate in Hz (using microseconds directly)
+    const float fs_hz = 1.0f / (Ts_us * 1e-6f);
     const float cuttoff_frequency_alt = fs_hz / 4.0f;    
-    const float betha_alt = 1.0f - expf(-Ts_us * 2.0f * M_PI * cuttoff_frequency_alt); 
+    const float betha_alt = 1.0f - expf(-Ts_us * 1e-6f * 2.0f * M_PI * cuttoff_frequency_alt); 
 
     const float cuttoff_frequency_imu = fs_hz / 4.0f; 
-    const float betha_imu = 1.0f - expf(-Ts_us * 2.0f * M_PI * cuttoff_frequency_imu);*/
+    const float betha_imu = 1.0f - expf(-Ts_us * 1e-6f * 2.0f * M_PI * cuttoff_frequency_imu);*/
 
     if (!imu_ready) {
         Serial.print(" IMU not ready! ");
@@ -84,55 +114,34 @@ void runKalmanFilter(SensorDataResult *sensorData, Eigen::MatrixXf *x, float Ts)
     } else{
         if (!initialized) {
             *x << 0,0,0,       // δθ
-                0,0,0,    // b_imu
-                0,0,0,      // b_g
+                0,0,0,        // b_imu
+                0,0,0,       // b_g
                 0,0,0,      // v
                 0,0,0,     // p
-                0;      // bias_baro
+                0;        // bias_baro
             initialized = true;
         }
 
-        acc_fused[0] = sensorData->lsmData.AccelZ;
-        acc_fused[1] = sensorData->lsmData.AccelY;
-        acc_fused[2] = -sensorData->lsmData.AccelX;
+        acc_fused[0] = -sensorData->lsmData.AccelZ;
+        acc_fused[1] = -sensorData->lsmData.AccelY;
+        acc_fused[2] = sensorData->lsmData.AccelX;
 
-        gyro_fused[0] = sensorData->lsmData.GyroY;
-        gyro_fused[1] = sensorData->lsmData.GyroX;
-        gyro_fused[2] = sensorData->lsmData.GyroZ;
+        gyro_fused[0] = sensorData->lsmData.GyroZ;
+        gyro_fused[1] = sensorData->lsmData.GyroY;
+        gyro_fused[2] = sensorData->lsmData.GyroX;
 
-        float q[4] = {q_nom(0), q_nom(1), q_nom(2), q_nom(3)}; // w, x, y, z
-
-
-        /*if (!imu_calibrated) {
-            acc_bias[0] += acc_fused[0];
-            acc_bias[1] += acc_fused[1];
-            acc_bias[2] += acc_fused[2];
-            imu_calib_count++;
-
-            if(imu_calib_count >= 100){ // Calibrate for the first 100 readings (~1 second at 100Hz)
-                acc_bias[0] /= imu_calib_count;
-                acc_bias[1] /= imu_calib_count;
-                acc_bias[2] /= imu_calib_count;
-                
-                imu_calibrated = true;
-            }
-            return;
-        }
-
-        acc_fused[0] -= acc_bias[0];
-        acc_fused[1] -= acc_bias[1];
-        acc_fused[2] -= acc_bias[2];*/
-
-        predict(x, &P, q, acc_fused, gyro_fused, Ts, &Q, &F, &P_pred);
+        //Serial.print(" Q: "); Serial.print(Q(14,14), 5);
+        predict(x, &P, acc_fused, gyro_fused, Ts_us, &Q, &F, &P_pred);
     }
 
     // Barometer update
-    if(baro1_ready && baro2_ready){
-        z1 = sensorData->bmpData.Altitude;
+    if(baro1_ready && baro2_ready) {
+
+        z1 = sensorData->bmpData.Altitude + 6.0f; // offset for baro1
         //Serial.print(" Baro1: "); Serial.print(z1);
         z2 = sensorData->lpsData.Altitude;
         //Serial.print(" Baro2: "); Serial.print(z2);
-        z_fused = z1*0.5 + z2*0.5; // PESOS!
+        z_fused = z1*0.8 + z2*0.2; // PESOS!
 
         if (!baro_offset_set) {
             (*x)(pz_idx) = 0.0;
@@ -142,8 +151,15 @@ void runKalmanFilter(SensorDataResult *sensorData, Eigen::MatrixXf *x, float Ts)
             baro_offset_set = true;
         }
 
+        if (z_fused - bias < 0) {
+            z_fused = bias; // prevent negative altitude
+        }
+
         z_fused -= bias; // TARAR o barómetro
         //Serial.print(" Baro fused: "); Serial.print(z_fused);
+
+        // LOW PASS altitude
+        //altitude_local += (z_fused - altitude_local) * betha_alt;
 
         Eigen::MatrixXf R_baro(1,1); 
         R_baro = RR1.block(14, 14, 1, 1);
@@ -161,8 +177,8 @@ void runKalmanFilter(SensorDataResult *sensorData, Eigen::MatrixXf *x, float Ts)
         }*/
         //R_baro(0, 0) = RR1(pz_idx, pz_idx)*0.5 + RR2(pz_idx, pz_idx)*0.5;   // depois PESOS!
         R_baro(0, 0) = sigma_baro1*sigma_baro1*0.5 + sigma_baro2*sigma_baro2*0.5;   // depois PESOS!
-        //Serial.print(" R_baro: "); Serial.print(R_baro(0, 0));
-
+        //Serial.print(" R_baro: "); Serial.print(R_baro(0, 0), 5);
+        
         update_barometer(x, &P, &z_fused, &R_baro, pz_idx, b_idx);
         //Serial.print(" estado: "); Serial.println((*x)(pz_idx));
 
