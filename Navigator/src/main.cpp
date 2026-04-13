@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoEigen.h>
+#include "Comms.h"
 #include "Sensors.h"
 #include "Display.h"
 #include "Sensors/buzzer.h"
@@ -18,6 +19,9 @@ void setup() {
   Serial.println("Navigator Initiating...");
   setup_buzzer();
   Serial.println("Starting Setup...");
+
+  InitializeSensorUART();
+  Serial.println("Sensor UART initialized.");
 
   Wire.setSDA(I2C_SDA_PIN0);
   Wire.setSCL(I2C_SCL_PIN0);
@@ -56,6 +60,7 @@ void loop() {
   // x = [delta_theta(3), bimu(3), bg(3), v(3), p(3), bias_baro]
 
   runKalmanFilter(&sensorData, &x, Ts);
+  SendSensorDataOverUART(sensorData);
   Serial.print(" accx = "); Serial.print(sensorData.lsmData.AccelZ);
   Serial.print(" accy = "); Serial.print(sensorData.lsmData.AccelY);
   Serial.print(" accz = "); Serial.print(sensorData.lsmData.AccelX);

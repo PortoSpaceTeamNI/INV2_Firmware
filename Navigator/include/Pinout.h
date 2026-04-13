@@ -47,7 +47,7 @@
 #define RED_STATUS_PIN 27
 #define GREEN_STATUS_PIN 26
 
-//* GPS
+// * OBC Comms
 #define WRITE_1_PIN 4
 #define READ_1_PIN 5
 #define WRITE_OBC_PIN 16
