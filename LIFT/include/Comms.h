@@ -75,8 +75,6 @@ typedef enum
 #define LIFT_THRUST_ID 8
 #define BROADCAST_ID 0xFF
 
-#define DEFAULT_ID LIFT_THRUST_ID // Change this for each board
-
 void write_packet(packet_t *cmd);
 packet_t *read_packet(int *error);
 
