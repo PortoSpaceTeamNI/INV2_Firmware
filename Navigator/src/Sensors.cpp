@@ -1,6 +1,7 @@
 #include "Sensors.h"
 
 SensorDataResult sensorData;
+bool baro1_ready = false, baro2_ready = false, imu_ready = false, mag_ready = false;
 
 static bool bmpInitialized = false;
 static bool lsmInitialized = false;
@@ -72,13 +73,15 @@ int ConfigureSensors() {
 
 int ReadSensors() {
     if (IsBMP581Ready()) {
+        baro1_ready = true;
         if (ReadBMP581(sensorData.bmpData) != 0) {
             Serial.println("Could not read from BMP581.");
             return -1;
         }
     }
 
-    if (IsLSM6DSOReady()) {
+    if (IsLSM6DSOReady()) { //IMU
+        imu_ready = true;
         if (ReadLSM6DSO(sensorData.lsmData) != 0) {
             Serial.println("Could not read from LSM6DSO.");
             return -1;
@@ -86,6 +89,7 @@ int ReadSensors() {
     }
 
     if (IsLPS22DFReady()) {
+        baro2_ready = true;
         if (ReadLPS22DF(sensorData.lpsData) != 0) {
             Serial.println("Could not read from LPS22DF.");
             return -1;

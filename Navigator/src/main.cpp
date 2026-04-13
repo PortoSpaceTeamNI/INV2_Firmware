@@ -1,7 +1,12 @@
 #include <Arduino.h>
+#include <ArduinoEigen.h>
+#include "Comms.h"
 #include "Sensors.h"
 #include "Display.h"
 #include "Sensors/buzzer.h"
+#include "runkalman.h"
+#include "func.h"
+#include "quaternion.h"
 
 #define POLL_INTERVAL_MS 10
 
