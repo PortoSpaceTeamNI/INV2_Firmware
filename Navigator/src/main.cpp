@@ -60,7 +60,7 @@ void loop() {
   // x = [delta_theta(3), bimu(3), bg(3), v(3), p(3), bias_baro]
 
   runKalmanFilter(&sensorData, &x, Ts);
-  SendSensorDataOverUART(sensorData);
+  PollAndHandleComms(x(14), x(11), sensorData.lsmData.AccelZ);
   Serial.print(" accx = "); Serial.print(sensorData.lsmData.AccelZ);
   Serial.print(" accy = "); Serial.print(sensorData.lsmData.AccelY);
   Serial.print(" accz = "); Serial.print(sensorData.lsmData.AccelX);

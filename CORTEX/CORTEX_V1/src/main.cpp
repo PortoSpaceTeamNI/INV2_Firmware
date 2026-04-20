@@ -26,28 +26,28 @@ void setup() {
   pinMode(ENABLE_RS_PIN, OUTPUT);
   digitalWrite(ENABLE_RS_PIN, RS485_RX_ENABLE_LEVEL); // Start in receive mode
 
-  Serial1.println("System Initializing...");
+  Serial.println("System Initializing...");
 
   delay(1000); // Short delay to ensure Serial is ready
 
-  Serial1.println("Serial communication established.");
+  Serial.println("Serial communication established.");
 
   if (createQueues() != 0) {
-    Serial1.println("Failed to create one or more queues.");
+    Serial.println("Failed to create one or more queues.");
   } else {
-    Serial1.println("Queues created successfully.");
+    Serial.println("Queues created successfully.");
   }
 
   if (createMutexes() != 0) {
-    Serial1.println("Failed to create one or more mutexes.");
+    Serial.println("Failed to create one or more mutexes.");
   } else {
-    Serial1.println("Mutexes created successfully.");
+    Serial.println("Mutexes created successfully.");
   }
 
   if (createTasks() != 0) {
-    Serial1.println("Failed to create one or more tasks.");
+    Serial.println("Failed to create one or more tasks.");
   } else {
-    Serial1.println("Tasks created successfully.");
+    Serial.println("Tasks created successfully.");
   }
 
 }
