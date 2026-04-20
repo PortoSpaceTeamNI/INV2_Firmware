@@ -118,13 +118,7 @@ static uint8_t expectedStatusPayloadSizeForSender(uint8_t senderId)
   case HYDRA_UF_ID:
   case HYDRA_LF_ID:
   case HYDRA_FS_ID:
-<<<<<<< HEAD
     return sizeof(HydraFSData);
-=======
-    return sizeof(HydraStatusRaw);
-  case NAVIGATOR_ID:
-    return sizeof(NavigatorData);
->>>>>>> e63f19d299945c536ddde911286e4bd0c8f0860a
   case LIFT_TANK_ID:
     return sizeof(LiftTankData);
   case LIFT_BOTTLE_ID:

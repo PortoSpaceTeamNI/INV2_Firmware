@@ -61,7 +61,6 @@ void setup()
   // while(1);
 }
 
-<<<<<<< HEAD
 unsigned long t_prev = 0;
 void loop() {
 
@@ -88,16 +87,4 @@ void loop() {
   //Serial.print(" y = "); Serial.print(x(13));
   Serial.print(" z = "); Serial.println(x(14));
   //Serial.print(" Ts = "); Serial.println(Ts);  
-=======
-void loop()
-{
-  if ((millis() - last_poll_time) >= POLL_INTERVAL_MS)
-  {
-    if (ReadSensors() != 0)
-      Serial.println("Failed to read data.");
-    else
-      DisplayData(&sensorData);
-    last_poll_time = millis();
-  }
->>>>>>> e63f19d299945c536ddde911286e4bd0c8f0860a
 }

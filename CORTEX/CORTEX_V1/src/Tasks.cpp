@@ -19,15 +19,10 @@ int createTasks() {
   if (xTaskCreate(vDataPollingTask, "DataPolling", 1024, NULL, 1, NULL) != pdPASS) {
     return -1;
   }
-<<<<<<< HEAD
   if (xTaskCreate(vRS485Task, "RS485", 1024, NULL, 5, NULL) != pdPASS) {
     return -1;
   }
   if (xTaskCreate(vNavigatorTask, "Navigator", 1024, NULL, 3, NULL) != pdPASS) {
-=======
-  
-  if (xTaskCreate(vRS485Task, "RS485", 1024, NULL, 4, NULL) != pdPASS) {
->>>>>>> e63f19d299945c536ddde911286e4bd0c8f0860a
     return -1;
   }
   return 0;

@@ -105,12 +105,9 @@ void read_from_rs485(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *st
 {
     while (Serial2.available() && *state != END)
     {
-<<<<<<< HEAD
 #if RS485_DEBUG_LOG
         Serial.println(Serial2.peek(), HEX);
 #endif
-=======
->>>>>>> e63f19d299945c536ddde911286e4bd0c8f0860a
         *read_byte = Serial2.read();
         *state = parse_input(*read_byte, packet, *state);
     }
