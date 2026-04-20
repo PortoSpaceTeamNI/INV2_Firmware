@@ -51,6 +51,8 @@ struct __attribute__((__packed__)) HydraFSData {
     uint8_t valve_n2_purge;
     uint8_t valve_ox_fill;
     uint8_t valve_ox_purge;
+    uint8_t valve_n2o_quick_dc;
+    uint8_t valve_n2_quick_dc;
     uint16_t n2_pressure;
     uint16_t ox_pressure;
     uint16_t n2_temperature;
@@ -58,17 +60,17 @@ struct __attribute__((__packed__)) HydraFSData {
 };
 
 struct __attribute__((__packed__)) LiftTankData {
-    int16_t tank_weight; // unit * 100
+    int32_t tank_weight; // unit * 100
 };
 
 struct __attribute__((__packed__)) LiftBottleData {
-    int16_t bottle_weight; // unit * 100
+    int32_t bottle_weight; // unit * 100
 };
 
 struct __attribute__((__packed__)) LiftThrustData {
-    int16_t thrust_1; // unit * 100
-    int16_t thrust_2; // unit * 100
-    int16_t thrust_3; // unit * 100
+    int32_t thrust_1; // unit * 100
+    int32_t thrust_2; // unit * 100
+    int32_t thrust_3; // unit * 100
 };
 
 struct __attribute__((__packed__)) RocketData {

@@ -50,6 +50,8 @@ void setup() {
     Serial.println("Tasks created successfully.");
   }
 
+  Serial1.println("Setup complete.");
+  tone(BUZZER_PIN, 1000, 100); // Beep to indicate setup is complete
 }
 
 void loop() {

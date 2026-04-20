@@ -8,43 +8,60 @@
 #include "func.h"
 #include "quaternion.h"
 
+#define POLL_INTERVAL_MS 10
+
 extern SensorDataResult sensorData;
+unsigned long last_poll_time = 0;
 
-void setup() {
+void setup()
+{
   Serial.begin(115200); // Start serial communication
-
-  delay(1000);
-  while (!Serial && millis() < 3000) { delay(10); } // wait for monitor
-
+  while (!Serial)
+  {
+    ; // Wait for serial port to connect. Needed for native USB
+  }
   Serial.println("Navigator Initiating...");
   setup_buzzer();
   Serial.println("Starting Setup...");
 
-  InitializeSensorUART();
-  Serial.println("Sensor UART initialized.");
-
-  Wire.setSDA(I2C_SDA_PIN0);
-  Wire.setSCL(I2C_SCL_PIN0);
+  Wire.setSDA(SDA0_PIN);
+  Wire.setSCL(SCL0_PIN);
   Wire.begin();
   Serial.println("I2C0 initialized");
 
-  Wire1.setSDA(I2C_SDA_PIN1);
-  Wire1.setSCL(I2C_SCL_PIN1);
+  Wire1.setSDA(SDA1_PIN);
+  Wire1.setSCL(SCL1_PIN);
   Wire1.begin();
   Serial.println("I2C1 initialized");
 
-  if (InitializeSensors() == 0) {
+  SPI1.setSCK(SPI1_SCK_PIN);
+  SPI1.setTX(SPI1_MOSI_PIN);
+  SPI1.setRX(SPI1_MISO_PIN);
+  SPI1.begin();
+  Serial.println("SPI1 initialized");
+
+  if (InitializeSensors() == 0)
+  {
     Serial.println("Sensors initialized.");
-  } else Serial.println("One or more sensors failed.");
+  }
+  else
+    Serial.println("One or more sensors failed.");
 
-  if (ConfigureSensors() == 0) {
+  // while (1);
+
+  if (ConfigureSensors() == 0)
+  {
     Serial.println("Sensors Configured.");
-  } else Serial.println("One or more sensors failed to configure.");
+  }
+  else
+    Serial.println("One or more sensors failed to configure.");
 
-  Serial.println("Setup complete.");
-  //play_buzzer_success();
+  play_buzzer_success();
+
+  // while(1);
 }
 
+<<<<<<< HEAD
 unsigned long t_prev = 0;
 void loop() {
 
@@ -71,4 +88,16 @@ void loop() {
   //Serial.print(" y = "); Serial.print(x(13));
   Serial.print(" z = "); Serial.println(x(14));
   //Serial.print(" Ts = "); Serial.println(Ts);  
+=======
+void loop()
+{
+  if ((millis() - last_poll_time) >= POLL_INTERVAL_MS)
+  {
+    if (ReadSensors() != 0)
+      Serial.println("Failed to read data.");
+    else
+      DisplayData(&sensorData);
+    last_poll_time = millis();
+  }
+>>>>>>> e63f19d299945c536ddde911286e4bd0c8f0860a
 }
