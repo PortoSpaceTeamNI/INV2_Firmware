@@ -200,7 +200,7 @@ int processMissionControlCommand(packet_t *packet, packet_t *ack)
     ack->cmd = CMD_ACK;
     if (write_packet(ack, UART_INTERFACE) != 0)
     {
-      Serial1.println("Failed to send status acknowledgment");
+      Serial.println("Failed to send status acknowledgment");
       return -1;
     }
     return 0;
@@ -315,8 +315,8 @@ void vMissionControlTask(void *pvParameters)
       processMissionControlCommand(receivedPacket, &ack);
     }
     else if (receivedPacket != NULL) {
-      Serial1.print("Error reading packet from Mission Control: ");
-      Serial1.println(error);
+      Serial.print("Error reading packet from Mission Control: ");
+      Serial.println(error);
     }
     if (!hadPacket) {
       vTaskDelay(pdMS_TO_TICKS(5));

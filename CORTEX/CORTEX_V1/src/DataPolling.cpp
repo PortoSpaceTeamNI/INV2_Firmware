@@ -118,9 +118,7 @@ static uint8_t expectedStatusPayloadSizeForSender(uint8_t senderId)
   case HYDRA_UF_ID:
   case HYDRA_LF_ID:
   case HYDRA_FS_ID:
-    return sizeof(HydraStatusRaw);
-  case NAVIGATOR_ID:
-    return sizeof(NavigatorData);
+    return sizeof(HydraFSData);
   case LIFT_TANK_ID:
     return sizeof(LiftTankData);
   case LIFT_BOTTLE_ID:
@@ -187,8 +185,8 @@ int pollNextSlave()
 
   if (requestStatus(nextSlaveId) != 0)
   {
-    Serial1.print("Failed to request status from slave ID: ");
-    Serial1.println(nextSlaveId);
+    Serial.print("Failed to request status from slave ID: ");
+    Serial.println(nextSlaveId);
   } else {
     //Serial1.print("Requested status from slave ID: ");
     //Serial1.println(nextSlaveId);
@@ -196,6 +194,10 @@ int pollNextSlave()
 
   // Round-robin to the next slave for the next poll
   nextSlaveId++;
+
+  // Skip Navigator (it is in UART, not RS)
+  if (nextSlaveId == NAVIGATOR_ID) nextSlaveId++;
+
   if (nextSlaveId > LIFT_THRUST_ID)
   {
     nextSlaveId = HYDRA_UF_ID; // Wrap around to the first slave
@@ -250,9 +252,6 @@ void processStatusAck(packet_t *ack)
         memcpy(&hydraRaw, statusPayload, sizeof(HydraStatusRaw));
         mapHydraRawToRocketData(HYDRA_FS_ID, hydraRaw, &rocketData);
       }
-      break;
-    case NAVIGATOR_ID:
-      memcpy(&rocketData.navigatorData, statusPayload, sizeof(NavigatorData));
       break;
     case LIFT_TANK_ID:
       memcpy(&rocketData.liftTankData, statusPayload, sizeof(LiftTankData));
