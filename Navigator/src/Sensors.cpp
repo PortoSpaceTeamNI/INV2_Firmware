@@ -48,31 +48,8 @@ int ConfigureSensors() {
 }
 
 int ReadSensors() {
-    if (IsBMP581Ready()) {
-        baro1_ready = true;
-        if (ReadBMP581(sensorData.bmpData) != 0) {
-            Serial.println("Could not read from BMP581.");
-            return -1;
-        }
-    }
-
-    if (IsLSM6DSOReady()) { //IMU
-        imu_ready = true;
-        if (ReadLSM6DSO(sensorData.lsmData) != 0) {
-            Serial.println("Could not read from LSM6DSO.");
-            return -1;
-        }
-    }
-
-    if (IsLPS22DFReady()) {
-        baro2_ready = true;
-        if (ReadLPS22DF(sensorData.lpsData) != 0) {
-            Serial.println("Could not read from LPS22DF.");
-            return -1;
-        }
-    }
-
-    // Resto dos sensores
-
+    // Interrupt-driven reads only - no polling needed
+    // Data is read in ISR when ready pins trigger
+    // This function can be removed or kept for compatibility
     return 0;
 }

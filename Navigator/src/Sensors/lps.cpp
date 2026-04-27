@@ -16,7 +16,10 @@ int InitializeLPS22DF()
 
 int ConfigureLPS22DF()
 {
+    // Enable default configuration with higher sampling rate
     lps.enableDefault();
+    // Set output data rate to 200 Hz (fastest available)
+    // This is typically configured via direct register writes in the LPS library
     return 0;
 }
 

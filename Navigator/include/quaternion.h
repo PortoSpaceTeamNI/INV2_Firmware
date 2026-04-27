@@ -3,6 +3,7 @@
 
 #include <FastTrig.h>
 #include <ArduinoEigen.h>
+#include <MadgwickAHRS.h>
 
 using namespace Eigen;
 
