@@ -78,11 +78,11 @@ static cmd_parse_state_t parse_input(uint8_t read_byte, packet_t *packet, cmd_pa
 int write_to_rs485(uint8_t *buffer, size_t size)
 {
 #if RS485_DEBUG_LOG
-    Serial1.println("Writing to RS485:");
+    Serial.println("Writing to RS485:");
     for (size_t i = 0; i < size; i++)
     {
-        Serial1.print("0x");
-        Serial1.println(buffer[i], HEX);
+        Serial.print("0x");
+        Serial.println(buffer[i], HEX);
     }
 #endif
 
@@ -91,14 +91,12 @@ int write_to_rs485(uint8_t *buffer, size_t size)
     const unsigned long frameTimeUs = (unsigned long)(((size * 10UL * 1000000UL) + (RS485_BAUD_RATE - 1)) / RS485_BAUD_RATE);
 
     digitalWrite(ENABLE_RS_PIN, RS485_TX_ENABLE_LEVEL); // switch to transmit mode
-    delayMicroseconds(RS485_TX_ENABLE_SETUP_US);
     if (Serial2.write(buffer, size) != size)
     {
         digitalWrite(ENABLE_RS_PIN, RS485_RX_ENABLE_LEVEL); // switch back to receive mode
         return -1;
     }
     Serial2.flush();
-    delayMicroseconds(frameTimeUs + RS485_TX_ENABLE_HOLD_US);
     digitalWrite(ENABLE_RS_PIN, RS485_RX_ENABLE_LEVEL); // switch back to receive mode
     return 0;
 }
@@ -107,7 +105,9 @@ void read_from_rs485(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *st
 {
     while (Serial2.available() && *state != END)
     {
-        Serial1.println(Serial2.peek(), HEX);
+#if RS485_DEBUG_LOG
+        Serial.println(Serial2.peek(), HEX);
+#endif
         *read_byte = Serial2.read();
         *state = parse_input(*read_byte, packet, *state);
     }
@@ -116,18 +116,18 @@ void read_from_rs485(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *st
 /* UART */
 void read_from_serial(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *state)
 {
-    while (Serial.available() && *state != END)
+    while (Serial1.available() && *state != END)
     {
-        *read_byte = Serial.read();
+        *read_byte = Serial1.read();
         *state = parse_input(*read_byte, packet, *state);
     }
 }
 
 int write_to_serial(uint8_t *buffer, size_t size)
 {
-    if (Serial.write(buffer, size) != size)
+    if (Serial1.write(buffer, size) != size)
     {
-        Serial1.println("Failed to write to serial");
+        Serial.println("Failed to write to serial1");
         return -1;
     }
     return 0;
@@ -147,6 +147,7 @@ int write_packet(packet_t *packet, interface_t interface)
         buff[size++] = packet->payload[i];
     buff[size++] = ((packet->crc >> 8) & 0xff);
     buff[size++] = ((packet->crc) & 0xff);
+
     switch (interface)
     {
     case LORA_INTERFACE:

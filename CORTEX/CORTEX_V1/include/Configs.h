@@ -9,14 +9,10 @@
 #define RS485_BAUD_RATE 115200
 
 // RS485 timeout configuration (ms)
-#define RS485_RESPONSE_TIMEOUT_MS 100
+#define RS485_RESPONSE_TIMEOUT_MS 8
 
 // RS485 polling interval (ms)
-#define STATUS_POLL_INTERVAL_MS 200
-
-// RS485 transceiver direction timing (microseconds)
-#define RS485_TX_ENABLE_SETUP_US 20
-#define RS485_TX_ENABLE_HOLD_US 100
+#define STATUS_POLL_INTERVAL_MS 20
 
 // RS485 transceiver direction pin levels
 #define RS485_TX_ENABLE_LEVEL HIGH

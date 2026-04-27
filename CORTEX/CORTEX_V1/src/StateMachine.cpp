@@ -273,13 +273,14 @@ void vStateMachineTask(void *pvParameters)
 {
   static RocketState currentState = IDLE;
   RocketEvent receivedEvent;
+  const TickType_t runPeriodTicks = pdMS_TO_TICKS(10);
   
   //Serial1.println("[TASK] StateMachine task started");
   while (true)
   {
     //Serial1.println("[TASK] Running: StateMachine");
     // Receive events from EventQueue
-    if (xQueueReceive(EventQueue, &receivedEvent, pdMS_TO_TICKS(10)) == pdTRUE)
+    if (xQueueReceive(EventQueue, &receivedEvent, runPeriodTicks) == pdTRUE)
     {
       // Process state machine transitions
       RocketState newState = updateState(currentState, receivedEvent);
@@ -310,9 +311,13 @@ void vStateMachineTask(void *pvParameters)
         xSemaphoreGive(stateMachineConfigsMutex);
       }
     } else {
-      RocketEvent updateEvent = EV_NONE;
-      xQueueSend(EventQueue, &updateEvent, 0); // Send EV_NONE to trigger state run without state change
-      vTaskDelay(pdMS_TO_TICKS(10)); // No event received, delay to allow other tasks to run
+      if (xSemaphoreTake(stateMachineConfigsMutex, portMAX_DELAY) == pdTRUE) {
+        if (xSemaphoreTake(rocketDataMutex, portMAX_DELAY) == pdTRUE) {
+          performStateRun(currentState, &stateMachineConfigs, &rocketData);
+          xSemaphoreGive(rocketDataMutex);
+        }
+        xSemaphoreGive(stateMachineConfigsMutex);
+      }
     }
   }
 }

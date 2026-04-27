@@ -1,14 +1,13 @@
 #include "Sensors/lps.h"
 #include <LPS.h>
 #include "Pinout.h"
-#include "Sensors.h"
 #include <Arduino.h>
 #include <Wire.h>
 LPS lps;
 
 int InitializeLPS22DF()
 {
-    pinMode(LPS22DF_RDY_PIN, INPUT_PULLUP);
+    pinMode(BAR1_RDY_PIN, INPUT_PULLUP);
 
     bool ret = lps.init(LPS::device_22DF, LPS::sa0_low, &Wire);
     return ret ? 0 : -1; // Return 0 on success, -1 on failure
@@ -26,7 +25,7 @@ int ConfigureLPS22DF()
 bool IsLPS22DFReady()
 {
 
-    return digitalRead(LPS22DF_RDY_PIN) == LOW; // RDY pin goes LOW when data is ready, per datasheet
+    return digitalRead(BAR1_RDY_PIN) == LOW; // RDY pin goes LOW when data is ready, per datasheet
 }
 
 int ReadLPS22DF(LPS22DFDataResult &result)

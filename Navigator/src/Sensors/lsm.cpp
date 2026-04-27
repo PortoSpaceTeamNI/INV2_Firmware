@@ -1,23 +1,32 @@
 #include "Sensors.h"
 #include "Sensors/lsm.h"
 #include "Pinout.h"
-#include <Adafruit_LSM6DS.h>
+#include <Adafruit_LSM6DSOX.h>
 
-Adafruit_LSM6DS lsm;
+Adafruit_LSM6DSOX lsm;
 
 int InitializeLSM6DSO() {
-    pinMode(INT1_ST_IMU, INPUT);
+    pinMode(ST_IMU_INT_PIN, INPUT);
 
-    int ret = lsm.begin_I2C(LSM6DSO_ADDR, &Wire1);
-    return ret ? 0 : -1;
+    if(!lsm.begin_I2C(LSM6DSO_ADDR, &Wire1)) {
+        return -1;
+    }
+    return 0;
 }
 
 int ConfigureLSM6DSO() {
+<<<<<<< HEAD
     // Set to maximum data rates for fastest updates
     lsm.setAccelDataRate(LSM6DS_RATE_833_HZ);  // ~833 Hz
     lsm.setAccelRange(LSM6DS_ACCEL_RANGE_4_G);
 
     lsm.setGyroDataRate(LSM6DS_RATE_833_HZ);   // ~833 Hz
+=======
+    lsm.setAccelDataRate(LSM6DS_RATE_6_66K_HZ);
+    lsm.setAccelRange(LSM6DS_ACCEL_RANGE_4_G);
+
+    lsm.setGyroDataRate(LSM6DS_RATE_6_66K_HZ);
+>>>>>>> 82799b79a740b71aeff4e4c836784823be307a9d
     lsm.setGyroRange(LSM6DS_GYRO_RANGE_2000_DPS);
 
     return 0;
@@ -43,9 +52,3 @@ int ReadLSM6DSO(LSM6DSODataResult& result) {
 
     return 0;
 }
-
-/*
-int ConfigureLSM6DSO();
-int Read(LSM6DSODataResult& result);
-bool IsLSM6DSOReady();
-*/

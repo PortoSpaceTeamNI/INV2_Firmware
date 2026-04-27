@@ -234,7 +234,6 @@ int handle_manual_exec_cmd(packet_t *packet, interface_t interface, packet_t *pa
             return CMD_RUN_STATE_ERROR;
         */
     packet_rep->cmd = CMD_ACK;
-    packet_rep->payload_size = 1;
     packet_rep->payload[0] = CMD_MANUAL_EXEC;
 
     switch (packet->payload[0])
@@ -254,6 +253,10 @@ int handle_manual_exec_cmd(packet_t *packet, interface_t interface, packet_t *pa
         break;
     }
     // send manual command ack
+    for (int i = 0; i < packet->payload_size; i++) {
+        packet_rep->payload[1 + i] = packet->payload[i];
+    }
+    packet_rep->payload_size = 1 + packet->payload_size;
     packet_rep->crc = crc((unsigned char *)&packet_rep, packet_rep->payload_size + 3);
     write_packet(packet_rep, interface);
 

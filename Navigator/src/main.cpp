@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoEigen.h>
+#include "Comms.h"
 #include "Sensors.h"
 #include "Display.h"
 #include "Sensors/buzzer.h"
@@ -45,8 +46,12 @@ float gx, gy, gz;
 
 float lin_ax, lin_ay, lin_az;
 
-extern SensorDataResult sensorData;
+#define POLL_INTERVAL_MS 10
 
+extern SensorDataResult sensorData;
+unsigned long last_poll_time = 0;
+
+<<<<<<< HEAD
 float processSensorData(SensorDataResult* sensorData, Eigen::MatrixXf* x, float Ts_us) {
   filter.updateIMU(sensorData->lsmData.GyroX, sensorData->lsmData.GyroY, sensorData->lsmData.GyroZ,
                     sensorData->lsmData.AccelX, sensorData->lsmData.AccelY, sensorData->lsmData.AccelZ);
@@ -260,35 +265,54 @@ int32_t v_imu_int_fp = 0;     // Integrated velocity from acceleration (fixed-po
 
 
 void setup() {
+=======
+void setup()
+{
+>>>>>>> 82799b79a740b71aeff4e4c836784823be307a9d
   Serial.begin(115200); // Start serial communication
-
-  delay(1000);
-  while (!Serial && millis() < 3000) { delay(10); } // wait for monitor
-
+  while (!Serial)
+  {
+    ; // Wait for serial port to connect. Needed for native USB
+  }
   Serial.println("Navigator Initiating...");
   setup_buzzer();
   Serial.println("Starting Setup...");
 
-  Wire.setSDA(I2C_SDA_PIN0);
-  Wire.setSCL(I2C_SCL_PIN0);
+  Wire.setSDA(SDA0_PIN);
+  Wire.setSCL(SCL0_PIN);
   Wire.begin();
   Wire.setClock(400000); // Set I2C0 to 400kHz (Fast Mode)
   Serial.println("I2C0 initialized at 400kHz");
 
-  Wire1.setSDA(I2C_SDA_PIN1);
-  Wire1.setSCL(I2C_SCL_PIN1);
+  Wire1.setSDA(SDA1_PIN);
+  Wire1.setSCL(SCL1_PIN);
   Wire1.begin();
   Wire1.setClock(400000); // Set I2C1 to 400kHz (Fast Mode)
   Serial.println("I2C1 initialized at 400kHz");
 
-  if (InitializeSensors() == 0) {
+  SPI1.setSCK(SPI1_SCK_PIN);
+  SPI1.setTX(SPI1_MOSI_PIN);
+  SPI1.setRX(SPI1_MISO_PIN);
+  SPI1.begin();
+  Serial.println("SPI1 initialized");
+
+  if (InitializeSensors() == 0)
+  {
     Serial.println("Sensors initialized.");
-  } else Serial.println("One or more sensors failed.");
+  }
+  else
+    Serial.println("One or more sensors failed.");
 
-  if (ConfigureSensors() == 0) {
+  // while (1);
+
+  if (ConfigureSensors() == 0)
+  {
     Serial.println("Sensors Configured.");
-  } else Serial.println("One or more sensors failed to configure.");
+  }
+  else
+    Serial.println("One or more sensors failed to configure.");
 
+<<<<<<< HEAD
   // Attach interrupt handlers for sensor ready pins
   pinMode(BMP581_RDY_PIN, INPUT);
   pinMode(LPS22DF_RDY_PIN, INPUT);
@@ -325,6 +349,11 @@ void setup() {
   Serial.println("Setup complete.");
   //play_buzzer_success();
   filter.begin(7000);
+=======
+  play_buzzer_success();
+
+  // while(1);
+>>>>>>> 82799b79a740b71aeff4e4c836784823be307a9d
 }
 
 // *** Barometer velocity filtering (fixed-point: × 10000) ***
@@ -375,6 +404,7 @@ void loop() {
   // ---- sensores ----
   int32_t acc = readVerticalAcceleration();
 
+<<<<<<< HEAD
   // Acceleration filter (fixed-point, no float operations)
   // az_filtered = 0.9 * az_filtered + 0.1 * acc
   az_filtered_fp = (alpha_acc_fp * az_filtered_fp + (10000 - alpha_acc_fp) * acc) / 10000;
@@ -424,4 +454,18 @@ void loop() {
     Serial.printf(">dt_ms:%.6f\r\n", dt * 1000);  // Print dt in milliseconds
     last_dt_print = now_ms;
   }*/
+=======
+  runKalmanFilter(&sensorData, &x, Ts);
+  PollAndHandleComms(x(14), x(11), sensorData.lsmData.AccelZ);
+  Serial.print(" accx = "); Serial.print(sensorData.lsmData.AccelZ);
+  Serial.print(" accy = "); Serial.print(sensorData.lsmData.AccelY);
+  Serial.print(" accz = "); Serial.print(sensorData.lsmData.AccelX);
+  //Serial.print(" vx = "); Serial.print(x(9));
+  //Serial.print(" vy = "); Serial.print(x(10));
+  //Serial.print(" vz = "); Serial.print(x(11));
+  //Serial.print(" x = "); Serial.print(x(12));
+  //Serial.print(" y = "); Serial.print(x(13));
+  Serial.print(" z = "); Serial.println(x(14));
+  //Serial.print(" Ts = "); Serial.println(Ts);  
+>>>>>>> 82799b79a740b71aeff4e4c836784823be307a9d
 }

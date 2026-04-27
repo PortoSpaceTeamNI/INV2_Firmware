@@ -19,7 +19,7 @@
 
 #define SYNC_BYTE 0x55
 #define MAX_PAYLOAD_SIZE 200
-#define RS485_TIMEOUT_TIME_MS 50 // try to get limit bounds
+#define RS485_TIMEOUT_TIME_MS 15 // try to get limit bounds
 
 typedef struct __attribute__((__packed__))
 // typedef struct
