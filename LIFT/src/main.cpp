@@ -84,6 +84,7 @@ static void sensor_task(void *pvParameters)
             read_sensors(&my_data);
             memcpy(&snapshot, &my_data, sizeof(data_t));
             xSemaphoreGive(data_mutex);
+            sd_log_sample(&snapshot);
 
 #ifdef DEBUG_LOADCELLS
             Serial.print("LC1: ");
@@ -136,7 +137,9 @@ void setup()
     pinMode(LED_BUILTIN, OUTPUT);
     Serial.begin(USB_BAUD_RATE); // USBC serial
     Serial.println("Setting up...");
-    //sd_init(SD_CS_PIN); // SD card
+    if (!sd_init(SD_CS_PIN)) {
+        Serial.println("SD logging unavailable; continuing without SD card.");
+    }
     Serial.println("Initializing peripherals...");
     rs485_init(); // RS-485 serial
     setup_error |= loadcells_setup();

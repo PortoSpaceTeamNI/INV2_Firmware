@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "DataModels.h"
+
 bool sd_init(uint8_t cs_pin);
 
 // --- Writing ---
@@ -12,6 +14,7 @@ void sd_log(const char *message);
 void sd_log_info(const char *message);
 void sd_log_error(const char *message);
 void sd_log_raw(const char *message);
+void sd_log_sample(const data_t *data);
 void sd_close(void);
 
 // --- Reading ---

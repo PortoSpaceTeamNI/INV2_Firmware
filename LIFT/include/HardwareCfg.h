@@ -6,6 +6,7 @@
 #define RS485_BAUD_RATE 115200 
 
 #define LOADCELL_POLL_INTERVAL 10  // milliseconds
+#define SD_LOG_INTERVAL_MS 50  // milliseconds
 
 #define MY_ID LIFT_BOTTLE_ID
 
