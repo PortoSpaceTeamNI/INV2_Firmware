@@ -4,7 +4,8 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-typedef enum {
+typedef enum
+{
     HYDRA_UF = 1,
     HYDRA_LF,
     HYDRA_FS,
@@ -32,12 +33,13 @@ typedef enum
     CMD_MANUAL_SD_LOG_START,
     CMD_MANUAL_SD_LOG_STOP,
     CMD_MANUAL_SD_STATUS,
-    CMD_MANUAL_VALVE_STATE, 
+    CMD_MANUAL_VALVE_STATE,
     CMD_MANUAL_VALVE_MS, // milliseconds to open/close valve
     manual_cmd_count,
 } manual_command_t;
 
-typedef enum {
+typedef enum
+{
     VALVE_QUICK_DC_1 = 0,
     VALVE_QUICK_DC_2,
     VALVE_CONTROLLED_1,
@@ -49,9 +51,11 @@ typedef enum {
     hydra_valve_count,
 } valve_t;
 
-typedef union {
+typedef union
+{
     uint8_t raw;
-    struct {
+    struct
+    {
         uint8_t v_quick_dc_1 : 1;
         uint8_t v_quick_dc_2 : 1;
         uint8_t v_controlled_1 : 1;
@@ -61,13 +65,14 @@ typedef union {
         uint8_t v_steel_ball_2 : 1;
         uint8_t v_servo : 1;
     };
-} valve_states_t;
+} __attribute__((packed)) valve_states_t;
 
-typedef struct {
+typedef struct
+{
     int16_t thermo1, thermo2, thermo3;
     int16_t pressure1, pressure2, pressure3;
     valve_states_t valve_states;
     bool cam_enable;
-} data_t;
+} __attribute__((packed)) data_t;
 
 #endif // DATA_MODELS_H
