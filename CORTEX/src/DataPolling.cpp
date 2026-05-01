@@ -213,7 +213,7 @@ void processStatusAck(packet_t *ack)
 
   // First payload byte is the acknowledged command (CMD_STATUS)
   const uint8_t *statusPayload = ack->payload + 1;
-
+  /*
   for (size_t i = 0; i < ack->payload_size - 1; i++)
   {
     Serial1.write("0x");
@@ -221,7 +221,7 @@ void processStatusAck(packet_t *ack)
     Serial1.write(" ");
   }
   Serial1.println();
-
+  */
   // Process status acknowledgment based on sender ID
   // TODO: Maybe will change if bools are sent as bitfields
 
