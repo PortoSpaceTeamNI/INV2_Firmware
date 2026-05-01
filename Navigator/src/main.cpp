@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoEigen.h>
-#include "Comms.h"
+#include "Communications.h"
 #include "Sensors.h"
 #include "Display.h"
 #include "Sensors/buzzer.h"
@@ -67,8 +67,10 @@ void loop()
   {
     if (ReadSensors() != 0)
       Serial.println("Failed to read data.");
-    else
+    else{
       DisplayData(&sensorData);
+      SendData(&sensorData);
+    }
     last_poll_time = millis();
   }
 }

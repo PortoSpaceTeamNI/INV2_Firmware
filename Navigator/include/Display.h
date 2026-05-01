@@ -4,5 +4,6 @@
 #include "Sensors.h"
 
 void DisplayData(SensorDataResult *data);
+void SendData(SensorDataResult *data);
 
 #endif
