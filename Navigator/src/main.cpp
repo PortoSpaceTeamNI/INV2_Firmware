@@ -51,7 +51,6 @@ float lin_ax, lin_ay, lin_az;
 extern SensorDataResult sensorData;
 unsigned long last_poll_time = 0;
 
-<<<<<<< HEAD
 float processSensorData(SensorDataResult* sensorData, Eigen::MatrixXf* x, float Ts_us) {
   filter.updateIMU(sensorData->lsmData.GyroX, sensorData->lsmData.GyroY, sensorData->lsmData.GyroZ,
                     sensorData->lsmData.AccelX, sensorData->lsmData.AccelY, sensorData->lsmData.AccelZ);
@@ -264,11 +263,8 @@ int32_t alpha_v_fp = 9000;    // 0.90 as fixed-point → 90% barometer, 10% IMU
 int32_t v_imu_int_fp = 0;     // Integrated velocity from acceleration (fixed-point)
 
 
-void setup() {
-=======
-void setup()
+void setup() 
 {
->>>>>>> 82799b79a740b71aeff4e4c836784823be307a9d
   Serial.begin(115200); // Start serial communication
   while (!Serial)
   {
@@ -312,7 +308,6 @@ void setup()
   else
     Serial.println("One or more sensors failed to configure.");
 
-<<<<<<< HEAD
   // Attach interrupt handlers for sensor ready pins
   pinMode(BMP581_RDY_PIN, INPUT);
   pinMode(LPS22DF_RDY_PIN, INPUT);
@@ -349,11 +344,6 @@ void setup()
   Serial.println("Setup complete.");
   //play_buzzer_success();
   filter.begin(7000);
-=======
-  play_buzzer_success();
-
-  // while(1);
->>>>>>> 82799b79a740b71aeff4e4c836784823be307a9d
 }
 
 // *** Barometer velocity filtering (fixed-point: × 10000) ***
@@ -404,7 +394,6 @@ void loop() {
   // ---- sensores ----
   int32_t acc = readVerticalAcceleration();
 
-<<<<<<< HEAD
   // Acceleration filter (fixed-point, no float operations)
   // az_filtered = 0.9 * az_filtered + 0.1 * acc
   az_filtered_fp = (alpha_acc_fp * az_filtered_fp + (10000 - alpha_acc_fp) * acc) / 10000;
@@ -454,18 +443,4 @@ void loop() {
     Serial.printf(">dt_ms:%.6f\r\n", dt * 1000);  // Print dt in milliseconds
     last_dt_print = now_ms;
   }*/
-=======
-  runKalmanFilter(&sensorData, &x, Ts);
-  PollAndHandleComms(x(14), x(11), sensorData.lsmData.AccelZ);
-  Serial.print(" accx = "); Serial.print(sensorData.lsmData.AccelZ);
-  Serial.print(" accy = "); Serial.print(sensorData.lsmData.AccelY);
-  Serial.print(" accz = "); Serial.print(sensorData.lsmData.AccelX);
-  //Serial.print(" vx = "); Serial.print(x(9));
-  //Serial.print(" vy = "); Serial.print(x(10));
-  //Serial.print(" vz = "); Serial.print(x(11));
-  //Serial.print(" x = "); Serial.print(x(12));
-  //Serial.print(" y = "); Serial.print(x(13));
-  Serial.print(" z = "); Serial.println(x(14));
-  //Serial.print(" Ts = "); Serial.println(Ts);  
->>>>>>> 82799b79a740b71aeff4e4c836784823be307a9d
 }
