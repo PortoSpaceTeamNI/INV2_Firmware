@@ -77,18 +77,18 @@ static cmd_parse_state_t parse_input(uint8_t read_byte, packet_t *packet, cmd_pa
 /* UART */
 void read_from_serial(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *state)
 {
-    while (Serial.available() && *state != END)
+    while (Serial1.available() && *state != END)
     {
-        *read_byte = Serial.read();
+        *read_byte = Serial1.read();
         *state = parse_input(*read_byte, packet, *state);
     }
 }
 
 int write_to_serial(uint8_t *buffer, size_t size)
 {
-    if (Serial.write(buffer, size) != size)
+    if (Serial1.write(buffer, size) != (int)size)
     {
-        Serial1.println("Failed to write to serial");
+        Serial.println("Failed to write to serial");
         return -1;
     }
     return 0;

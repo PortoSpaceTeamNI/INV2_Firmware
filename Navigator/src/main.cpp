@@ -8,6 +8,7 @@
 #include "func.h"
 #include "quaternion.h"
 
+// Change later: interval is 10ms
 #define POLL_INTERVAL_MS 10
 
 extern SensorDataResult sensorData;
@@ -16,6 +17,10 @@ unsigned long last_poll_time = 0;
 void setup()
 {
   Serial.begin(115200); // Start serial communication
+
+  Serial1.setTX(OBC_RX_PIN);
+  Serial1.setRX(OBC_TX_PIN);
+  Serial1.begin(115200);
   while (!Serial)
   {
     ; // Wait for serial port to connect. Needed for native USB
@@ -69,7 +74,10 @@ void loop()
       Serial.println("Failed to read data.");
     else{
       DisplayData(&sensorData);
-      SendData(&sensorData);
+      if (SendData(&sensorData) != 0) 
+      {
+        Serial.println("Failed to send data over UART.");
+      }
     }
     last_poll_time = millis();
   }

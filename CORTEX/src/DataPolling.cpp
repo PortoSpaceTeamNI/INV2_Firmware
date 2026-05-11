@@ -134,15 +134,15 @@ static uint8_t expectedStatusPayloadSizeForSender(uint8_t senderId)
 
 static bool isExpectedStatusAck(const packet_t *ack)
 {
-  if (ack == nullptr || ack->cmd != CMD_ACK || ack->payload_size < 1)
+  if (ack == nullptr ||  ack->payload_size < 1)
   {
     return false;
   }
 
-  if (ack->payload[0] != CMD_STATUS)
-  {
-    return false;
+  if (ack->sender_id == NAVIGATOR_ID) {
+    return ack->cmd == CMD_ACK || ack->cmd == CMD_STATUS;
   }
+
   /*
   if (ack->sender_id != expectedStatusSenderId)
   {
@@ -163,7 +163,7 @@ static bool isExpectedStatusAck(const packet_t *ack)
 
   return ack->payload_size == (uint8_t)(expectedPayloadSize + 1);
   */
-  return true; // Relaxed check for now, may want to re-enable strict payload size check later
+  return ack->cmd == CMD_ACK && ack->payload[0] == CMD_STATUS; // Relaxed check for now, may want to re-enable strict payload size check later
 }
 
 int requestStatus(uint8_t targetID)
@@ -187,18 +187,32 @@ int pollNextSlave()
 
   if (requestStatus(nextSlaveId) != 0)
   {
-    Serial1.print("Failed to request status from slave ID: ");
-    Serial1.println(nextSlaveId);
-  } else {
-    //Serial1.print("Requested status from slave ID: ");
-    //Serial1.println(nextSlaveId);
-  }
+    Serial.print("Failed to request status from slave ID: ");
+    Serial.println(nextSlaveId);
+  } 
 
   // Round-robin to the next slave for the next poll
   nextSlaveId++;
   if (nextSlaveId > LIFT_THRUST_ID)
   {
     nextSlaveId = HYDRA_UF_ID; // Wrap around to the first slave
+  }
+  if (nextSlaveId == NAVIGATOR_ID) {
+    nextSlaveId++; // Skip Navigator
+  }
+  return 0;
+}
+
+int pollNavigator()
+{
+  packet_t packet;
+  uint8_t payload[1] = {0};
+  create_packet(&packet, CORTEX_ID, NAVIGATOR_ID, CMD_STATUS, payload, 0);
+  
+  if (write_packet(&packet, UART_INTERFACE) != 0)
+  {
+    Serial.println("Failed to send Navigator status request");
+    return -1;
   }
   return 0;
 }
@@ -213,6 +227,11 @@ void processStatusAck(packet_t *ack)
 
   // First payload byte is the acknowledged command (CMD_STATUS)
   const uint8_t *statusPayload = ack->payload + 1;
+  if (ack->cmd == CMD_ACK)
+  {
+    statusPayload = ack->payload + 1;
+  }
+
   /*
   for (size_t i = 0; i < ack->payload_size - 1; i++)
   {
@@ -253,6 +272,7 @@ void processStatusAck(packet_t *ack)
       break;
     case NAVIGATOR_ID:
       memcpy(&rocketData.navigatorData, statusPayload, sizeof(NavigatorData));
+      DisplayData(&rocketData.navigatorData);
       break;
     case LIFT_TANK_ID:
       memcpy(&rocketData.liftTankData, statusPayload, sizeof(LiftTankData));
@@ -277,10 +297,11 @@ void processStatusAck(packet_t *ack)
 void vDataPollingTask(void *pvParameters)
 {
   uint32_t lastPollTime = 0;
+  uint32_t lastNavPollTime = 0;
   //Serial1.println("[TASK] DataPolling task started");
   while (true)
   {
-    //Serial1.println("[TASK] Running: DataPolling");
+    // Serial.println("[TASK] Running: DataPolling");
     // Poll rs bus acknowledgments
     static packet_t ack;
     if (xQueueReceive(AcknowledgementQueue, &ack, 0) == pdTRUE)
@@ -289,6 +310,7 @@ void vDataPollingTask(void *pvParameters)
       processStatusAck(&ack);
     }
 
+    // Poll rs slaves
     if ((millis() - lastPollTime) >= STATUS_POLL_INTERVAL_MS)
     {
       // If not waiting for response, poll next slave
@@ -298,6 +320,23 @@ void vDataPollingTask(void *pvParameters)
         lastPollTime = millis();
       }
     }
+
+    // Poll Navigator on UART
+    if ((millis() - lastNavPollTime) >= STATUS_POLL_INTERVAL_MS) {
+      if (pollNavigator() == 0) {
+        // DisplayData(&rocketData.navigatorData);
+      }
+      else Serial.println("Couldn't poll Navigator");
+      lastNavPollTime = millis();
+    }
+
     vTaskDelay(pdMS_TO_TICKS(5));
   }
+}
+
+void DisplayData(NavigatorData *sensorData)
+{
+  Serial.printf("Altitude: %.2f m\n", sensorData->altitude / 100.0f);
+  Serial.printf("Acceleration: %.2f m/s^2\n", sensorData->acceleration / 100.0f);
+  Serial.printf("Velocity: %.2f m/s\n", sensorData->velocity / 100.0f);
 }

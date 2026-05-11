@@ -3,7 +3,7 @@
 
 #include <Communications.h>
 
-#define DEVICE_ID CORTEX_ID
+#define DEVICE_ID NAVIGATOR_ID
 
 // RS485 UART configuration
 #define RS485_BAUD_RATE 115200
