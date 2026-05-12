@@ -38,7 +38,7 @@ void update_barometer(Eigen::MatrixXf *x, Eigen::MatrixXf *P, float *z_baro, Eig
 // EKF magnetometer update step
 void update_mag(Eigen::MatrixXf *x, Eigen::MatrixXf *P, const float *q_nom, float mag_meas[3], float mag_ref[3], Eigen::MatrixXf *R_mag);
 
-void predict(Eigen::MatrixXf *x, Eigen::MatrixXf *P, float *q_nom, float acc_body[3], float gyro_body[3], float Ts, Eigen::MatrixXf *Q, Eigen::MatrixXf *F, Eigen::MatrixXf *P_pred);
+void predict(Eigen::MatrixXf *x, Eigen::MatrixXf *P, float acc_body[3], float gyro_body[3], uint32_t Ts_us, Eigen::MatrixXf *Q, Eigen::MatrixXf *F, Eigen::MatrixXf *P_pred);
 
 
 // A general update function (not specific to EKF, could be used for other updates)

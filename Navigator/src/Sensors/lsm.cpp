@@ -15,10 +15,11 @@ int InitializeLSM6DSO() {
 }
 
 int ConfigureLSM6DSO() {
-    lsm.setAccelDataRate(LSM6DS_RATE_6_66K_HZ);
+    // Set to maximum data rates for fastest updates
+    lsm.setAccelDataRate(LSM6DS_RATE_833_HZ);  // ~833 Hz
     lsm.setAccelRange(LSM6DS_ACCEL_RANGE_4_G);
 
-    lsm.setGyroDataRate(LSM6DS_RATE_6_66K_HZ);
+    lsm.setGyroDataRate(LSM6DS_RATE_833_HZ);   // ~833 Hz
     lsm.setGyroRange(LSM6DS_GYRO_RANGE_2000_DPS);
 
     return 0;

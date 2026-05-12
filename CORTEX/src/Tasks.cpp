@@ -2,13 +2,16 @@
 #include <task.h>
 
 #include "Tasks.h"
+#include "Communications.h"
 #include "MissionControl.h"
 #include "StateMachine.h"
 #include "DataPolling.h"
+#include "Navigator.h"
 #include "RS485.h"
+#include "UART.h"
 
 int createTasks() {
-  if (xTaskCreate(vMissionControlTask, "MissionControl", 1024, NULL, 3, NULL) != pdPASS) {
+  if (xTaskCreate(vMissionControlTask, "MissionControl", 1024, NULL, 4, NULL) != pdPASS) {
     return -1;
   }
   if (xTaskCreate(vStateMachineTask, "StateMachine", 1024, NULL, 2, NULL) != pdPASS) {
@@ -18,9 +21,16 @@ int createTasks() {
   if (xTaskCreate(vDataPollingTask, "DataPolling", 1024, NULL, 1, NULL) != pdPASS) {
     return -1;
   }
-  
-  if (xTaskCreate(vRS485Task, "RS485", 1024, NULL, 4, NULL) != pdPASS) {
+  if (xTaskCreate(vRS485Task, "RS485", 1024, NULL, 5, NULL) != pdPASS) {
     return -1;
   }
+  if (xTaskCreate(vNavigatorTask, "Navigator", 1024, NULL, 3, NULL) != pdPASS) {
+    return -1;
+  }
+
+  if (xTaskCreate(vUARTTask, "UART", 1024, NULL, 4, NULL) != pdPASS) {
+    return -1;
+  }
+
   return 0;
 }
