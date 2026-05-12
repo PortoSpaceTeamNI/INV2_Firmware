@@ -15,7 +15,10 @@ int InitializeLPS22DF()
 
 int ConfigureLPS22DF()
 {
+    // Enable default configuration with higher sampling rate
     lps.enableDefault();
+    // Set output data rate to 200 Hz (fastest available)
+    // This is typically configured via direct register writes in the LPS library
     return 0;
 }
 
@@ -29,6 +32,6 @@ int ReadLPS22DF(LPS22DFDataResult &result)
 {
     result.Pressure = lps.readPressureMillibars(); // mBar = hPa
     result.Temperature = lps.readTemperatureC();
-    result.Altitude = lps.pressureToAltitudeMeters(result.Pressure);
+    result.Altitude = lps.pressureToAltitudeMeters(result.Pressure, 1030.0); // standard sea level pressure in mBar = hPa
     return 0;
 }

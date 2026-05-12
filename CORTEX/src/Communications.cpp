@@ -80,11 +80,11 @@ static cmd_parse_state_t parse_input(uint8_t read_byte, packet_t *packet, cmd_pa
 int write_to_rs485(uint8_t *buffer, size_t size)
 {
 #if RS485_DEBUG_LOG
-    Serial1.println("Writing to RS485:");
+    Serial.println("Writing to RS485:");
     for (size_t i = 0; i < size; i++)
     {
-        Serial1.print("0x");
-        Serial1.println(buffer[i], HEX);
+        Serial.print("0x");
+        Serial.println(buffer[i], HEX);
     }
 #endif
 
@@ -107,6 +107,9 @@ void read_from_rs485(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *st
 {
     while (Serial2.available() && *state != END)
     {
+#if RS485_DEBUG_LOG
+        Serial.println(Serial2.peek(), HEX);
+#endif
         *read_byte = Serial2.read();
         *state = parse_input(*read_byte, packet, *state);
     }
