@@ -34,6 +34,7 @@ void DisplayData(SensorDataResult *sensorData)
 
 int SendData(SensorDataResult *sensorData)
 {
+    // Change later
     nd.altitude = (uint16_t)(sensorData->bmpData.Altitude * 100.0f);
     nd.velocity = 0; 
     nd.acceleration = (int16_t)(sensorData->lsmData.AccelZ * 100.0f); 
