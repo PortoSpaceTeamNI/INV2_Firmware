@@ -22,7 +22,7 @@ struct __attribute__((__packed__)) CortexData {
 struct __attribute__((__packed__)) NavigatorData {
     uint16_t altitude;
     uint16_t velocity;
-    uint16_t acceleration;
+    int16_t acceleration;
     uint32_t gps_latitude;
     uint32_t gps_longitude;
 };
@@ -88,5 +88,6 @@ struct __attribute__((__packed__)) RocketData {
 extern SemaphoreHandle_t rocketDataMutex;
 
 void vDataPollingTask(void *pvParameters);
+void DisplayData(NavigatorData *sensorData);
 
 #endif // DATAPOLLING_H

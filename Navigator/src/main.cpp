@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <ArduinoEigen.h>
-#include "Comms.h"
+#include "Communications.h"
 #include "Sensors.h"
 #include "Display.h"
 #include "Sensors/buzzer.h"
@@ -46,6 +46,7 @@ float gx, gy, gz;
 
 float lin_ax, lin_ay, lin_az;
 
+// Change later: interval is 10ms
 #define POLL_INTERVAL_MS 10
 
 extern SensorDataResult sensorData;
@@ -266,6 +267,10 @@ int32_t v_imu_int_fp = 0;     // Integrated velocity from acceleration (fixed-po
 void setup() 
 {
   Serial.begin(115200); // Start serial communication
+
+  Serial1.setTX(OBC_RX_PIN);
+  Serial1.setRX(OBC_TX_PIN);
+  Serial1.begin(115200);
   while (!Serial)
   {
     ; // Wait for serial port to connect. Needed for native USB
@@ -443,4 +448,19 @@ void loop() {
     Serial.printf(">dt_ms:%.6f\r\n", dt * 1000);  // Print dt in milliseconds
     last_dt_print = now_ms;
   }*/
+
+  // SOLVE LATER
+  if ((millis() - last_poll_time) >= POLL_INTERVAL_MS)
+    {
+      if (ReadSensors() != 0)
+        Serial.println("Failed to read data.");
+      else{
+        DisplayData(&sensorData);
+        if (SendData(&sensorData) != 0) 
+        {
+          Serial.println("Failed to send data over UART.");
+        }
+      }
+      last_poll_time = millis();
+    }
 }

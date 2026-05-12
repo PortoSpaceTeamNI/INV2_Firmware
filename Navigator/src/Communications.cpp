@@ -5,8 +5,6 @@
 #include "Commands.h"
 #include "Configs.h"
 
-extern QueueHandle_t AcknowledgementQueue;
-
 bool check_crc(packet_t *packet)
 {
     /* TODO: Implement CRC */
@@ -76,45 +74,6 @@ static cmd_parse_state_t parse_input(uint8_t read_byte, packet_t *packet, cmd_pa
     return (cmd_parse_state_t)state;
 }
 
-/* RS485 */
-int write_to_rs485(uint8_t *buffer, size_t size)
-{
-#if RS485_DEBUG_LOG
-    Serial.println("Writing to RS485:");
-    for (size_t i = 0; i < size; i++)
-    {
-        Serial.print("0x");
-        Serial.println(buffer[i], HEX);
-    }
-#endif
-
-    // Keep DE asserted long enough for all bits to leave the transceiver.
-    // 1 start + 8 data + 1 stop bit = 10 bits per byte (8N1).
-    const unsigned long frameTimeUs = (unsigned long)(((size * 10UL * 1000000UL) + (RS485_BAUD_RATE - 1)) / RS485_BAUD_RATE);
-
-    digitalWrite(ENABLE_RS_PIN, RS485_TX_ENABLE_LEVEL); // switch to transmit mode
-    if (Serial2.write(buffer, size) != size)
-    {
-        digitalWrite(ENABLE_RS_PIN, RS485_RX_ENABLE_LEVEL); // switch back to receive mode
-        return -1;
-    }
-    Serial2.flush();
-    digitalWrite(ENABLE_RS_PIN, RS485_RX_ENABLE_LEVEL); // switch back to receive mode
-    return 0;
-}
-
-void read_from_rs485(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *state)
-{
-    while (Serial2.available() && *state != END)
-    {
-#if RS485_DEBUG_LOG
-        Serial.println(Serial2.peek(), HEX);
-#endif
-        *read_byte = Serial2.read();
-        *state = parse_input(*read_byte, packet, *state);
-    }
-}
-
 /* UART */
 void read_from_serial(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *state)
 {
@@ -127,7 +86,7 @@ void read_from_serial(uint8_t *read_byte, packet_t *packet, cmd_parse_state_t *s
 
 int write_to_serial(uint8_t *buffer, size_t size)
 {
-    if (Serial1.write(buffer, size) != size)
+    if (Serial1.write(buffer, size) != (int)size)
     {
         Serial.println("Failed to write to serial");
         return -1;
@@ -152,19 +111,8 @@ int write_packet(packet_t *packet, interface_t interface)
 
     switch (interface)
     {
-    case LORA_INTERFACE:
-        break;
-    case RS485_INTERFACE:
-        if (write_to_rs485(buff, size) != 0)
-        {
-            return -1;
-        }
-        break;
     case UART_INTERFACE:
-        if (write_to_serial(buff, size) != 0)
-        {
-            return -1;
-        }
+        if (write_to_serial(buff, size) != 0) return -1;
         break;
     default:
         break;
@@ -188,12 +136,6 @@ packet_t *read_packet(int *error, interface_t interface)
 
     switch (interface)
     {
-    case LORA_INTERFACE:
-        // TODO: Implement LoRa packet reading
-        break;
-    case RS485_INTERFACE:
-        read_from_rs485(&read_byte, packet, state);
-        break;
     case UART_INTERFACE:
         read_from_serial(&read_byte, packet, state);
         break;
@@ -215,10 +157,9 @@ packet_t *read_packet(int *error, interface_t interface)
     }
     // packet good
     else if (*state == END &&
-        (interface == UART_INTERFACE ||
-        packet->target_id == DEVICE_ID ||
-        packet->target_id == BROADCAST_ID) &&
-        (check_crc(packet) || !CRC_ENABLED))
+             (packet->target_id == DEVICE_ID ||
+              packet->target_id == BROADCAST_ID) &&
+             (check_crc(packet) || !CRC_ENABLED))
     {
         *state = SYNC;
         *error = CMD_READ_OK;
@@ -239,33 +180,22 @@ packet_t *read_packet(int *error, interface_t interface)
 
 int create_packet(packet_t *packet, uint8_t sender_id, uint8_t target_id, uint8_t cmd, uint8_t *payload, uint8_t payload_size)
 {
-    if (packet == NULL)
-    {
-        return -1;
-    }
+    if (packet == NULL) return -1;
+    
+    if (payload_size > MAX_PAYLOAD_SIZE) return -1;
 
-    if (payload_size > MAX_PAYLOAD_SIZE)
-    {
-        return -1;
-    }
-
-    if (payload_size > 0 && payload == NULL)
-    {
-        return -1;
-    }
+    if (payload_size > 0 && payload == NULL) return -1;
 
     packet->sender_id = sender_id;
     packet->target_id = target_id;
     packet->cmd = cmd;
     packet->payload_size = payload_size;
-    if (payload_size > 0)
-    {
-        memcpy(packet->payload, payload, payload_size);
-    }
-    if (payload_size < MAX_PAYLOAD_SIZE)
-    {
+
+    if (payload_size > 0) memcpy(packet->payload, payload, payload_size);
+
+    if (payload_size < MAX_PAYLOAD_SIZE) 
         memset(packet->payload + payload_size, 0, MAX_PAYLOAD_SIZE - payload_size);
-    }
+    
     packet->crc = 0; // TODO: Implement CRC
     return 0;
 }

@@ -40,7 +40,7 @@ typedef struct __attribute__((__packed__))
 {
 	uint16_t altitude;
 	uint16_t velocity;
-	uint16_t acceleration;
+	int16_t acceleration;
 	uint32_t gps_latitude;
 	uint32_t gps_longitude;
 } NavigatorData;

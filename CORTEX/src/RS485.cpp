@@ -71,7 +71,7 @@ void vRS485Task(void *pvParameters)
       // If data received, send to AckQ and set waitingForResponse to false
       if (receivedPacket != NULL && error == CMD_READ_OK)
       {
-        Serial.println("Received response on RS485, sending to AcknowledgementQueue");
+        //tone(BUZZER_PIN, 1500, 50); // Beep to indicate received response
         rxPacket = *receivedPacket;
         if (xQueueSend(AcknowledgementQueue, &rxPacket, 0) == pdPASS)
         {
