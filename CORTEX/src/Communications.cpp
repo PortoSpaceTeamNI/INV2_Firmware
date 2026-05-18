@@ -5,6 +5,8 @@
 #include "Commands.h"
 #include "Configs.h"
 
+extern QueueHandle_t AcknowledgementQueue;
+
 bool check_crc(packet_t *packet)
 {
     /* TODO: Implement CRC */
@@ -127,7 +129,7 @@ int write_to_serial(uint8_t *buffer, size_t size)
 {
     if (Serial1.write(buffer, size) != size)
     {
-        Serial.println("Failed to write to serial1");
+        Serial.println("Failed to write to serial");
         return -1;
     }
     return 0;
@@ -213,9 +215,10 @@ packet_t *read_packet(int *error, interface_t interface)
     }
     // packet good
     else if (*state == END &&
-             (packet->target_id == DEVICE_ID ||
-              packet->target_id == BROADCAST_ID) &&
-             (check_crc(packet) || !CRC_ENABLED))
+        (interface == UART_INTERFACE ||
+        packet->target_id == DEVICE_ID ||
+        packet->target_id == BROADCAST_ID) &&
+        (check_crc(packet) || !CRC_ENABLED))
     {
         *state = SYNC;
         *error = CMD_READ_OK;

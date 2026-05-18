@@ -1,5 +1,8 @@
 #include <Arduino.h>
 #include <SdFat.h>
+
+#include "DataModels.h"
+#include "HardwareCfg.h"
 #include "Logging.h"
 
 static SdFat sd;
@@ -7,6 +10,7 @@ static SdFile log_file;
 static SdFile read_file;
 static char log_filename[20];
 static uint8_t chip_select_pin = 5;
+static bool sd_ready = false;
 
 // Internal helpers
 static bool create_new_log_file();
@@ -17,6 +21,11 @@ static bool find_last_log_file(char *filename, size_t size);
 // === Initialization ===
 bool sd_init(uint8_t cs_pin) {
     chip_select_pin = cs_pin;
+    sd_ready = false;
+
+    pinMode(chip_select_pin, OUTPUT);
+    digitalWrite(chip_select_pin, HIGH);
+
     if (!sd.begin(chip_select_pin, SD_SCK_MHZ(10))) {
         Serial.println("SD init failed");
         return false;
@@ -29,6 +38,7 @@ bool sd_init(uint8_t cs_pin) {
 
     Serial.print("Logging to: ");
     Serial.println(log_filename);
+    sd_ready = true;
     return true;
 }
 
@@ -49,8 +59,36 @@ void sd_log_raw(const char *message) {
     write_line("", message);
 }
 
+void sd_log_sample(const data_t *data) {
+    static unsigned long last_log_ms = 0;
+
+    if (!sd_ready || data == NULL) {
+        return;
+    }
+
+    unsigned long now = millis();
+    if ((now - last_log_ms) < SD_LOG_INTERVAL_MS) {
+        return;
+    }
+    last_log_ms = now;
+
+    if (!log_file.isOpen()) {
+        return;
+    }
+
+    log_file.print(now);
+    log_file.print(',');
+    log_file.print(data->loadcells.loadcell1);
+    log_file.print(',');
+    log_file.print(data->loadcells.loadcell2);
+    log_file.print(',');
+    log_file.println(data->loadcells.loadcell3);
+    log_file.flush();
+}
+
 void sd_close(void) {
     if (log_file.isOpen()) {
+        log_file.flush();
         log_file.close();
     }
 }
@@ -194,11 +232,11 @@ void sd_delete_all_files(void) {
 
 static bool create_new_log_file() {
     for (int i = 1; i < 1000; i++) {
-        snprintf(log_filename, sizeof(log_filename), "log_%03d.txt", i);
+        snprintf(log_filename, sizeof(log_filename), "log_%03d.csv", i);
         if (!sd.exists(log_filename)) {
-            if (log_file.open(log_filename, O_WRITE | O_CREAT)) {
-                log_file.println("=== New Log Session ===");
-                log_file.close();
+            if (log_file.open(log_filename, O_WRITE | O_CREAT | O_APPEND)) {
+                log_file.println("ms,loadcell1_g,loadcell2_g,loadcell3_g");
+                log_file.flush();
                 return true;
             }
         }
@@ -209,7 +247,7 @@ static bool create_new_log_file() {
 static bool find_last_log_file(char *filename, size_t size) {
     for (int i = 999; i >= 1; i--) {
         char test[20];
-        snprintf(test, sizeof(test), "log_%03d.txt", i);
+        snprintf(test, sizeof(test), "log_%03d.csv", i);
         if (sd.exists(test)) {
             strncpy(filename, test, size);
             return true;
@@ -227,8 +265,7 @@ static void get_timestamp(char *buffer, size_t size) {
 }
 
 static void write_line(const char *level, const char *message) {
-    if (!log_file.open(log_filename, O_WRITE | O_APPEND)) {
-        Serial.println("Error opening log file");
+    if (!sd_ready || !log_file.isOpen()) {
         return;
     }
 
@@ -245,7 +282,6 @@ static void write_line(const char *level, const char *message) {
     }
     log_file.print(" ");
     log_file.println(message);
-
-    log_file.close();
+    log_file.flush();
 }
 

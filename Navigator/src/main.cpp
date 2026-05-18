@@ -1,16 +1,19 @@
 #include <Arduino.h>
 #include <ArduinoEigen.h>
-#include "Comms.h"
+#include "Communications.h"
 #include "Sensors.h"
 #include "Display.h"
 #include "Sensors/buzzer.h"
 //#include "runkalman.h"
 //#include "func.h"
-//#include "quaternion.h"
-#include <MadgwickAHRS.h>
+//#include "quaternion.h" 
+#include "Pinout.h"
 #include "mag.h"
+#include <MadgwickAHRS.h>
+#include "KalmanFilter.h"
 
 Madgwick filter;
+KalmanFilter kalman;
 
 // ====== INTERRUPT-DRIVEN SENSOR READING ======
 volatile bool bmp_data_ready = false;
@@ -46,6 +49,9 @@ float ax, ay, az;
 float gx, gy, gz;
 
 float lin_ax, lin_ay, lin_az;
+
+// Change later: interval is 10ms
+#define POLL_INTERVAL_MS 10
 
 extern SensorDataResult sensorData;
 
@@ -128,9 +134,6 @@ int32_t readAltitude() {
 
 // Returns: dz/dt in m/s × 100 (fixed-point)
 // =========================
-static unsigned long last_derivative_time = 0;
-static int32_t last_vz = 0;
-
 int32_t readAltitudeDerivative(int32_t current_z, float dt) {
   unsigned long now = micros();
 
@@ -368,7 +371,7 @@ void loop() {
   az_filtered_fp = (alpha_acc_fp * az_filtered_fp + (10000 - alpha_acc_fp) * acc) / 10000;
   int32_t acc_filtered = az_filtered_fp;
 
-  // barómetro
+  // Read altitude and compute derivative
   int32_t z = readAltitude();
 
   // ---- Kalman ----
@@ -421,7 +424,7 @@ void loop() {
   
   // ---- Print altitude and velocity (10 times per second) ----
   if (now_ms - last_state_print_ms >= STATE_PRINT_INTERVAL_MS) {
-    Serial.printf(">altitude:%.2f,velocity:%.2f\r\n", h / 100.0f, v / 100.0f);
+    Serial.printf(">altitude:%.2f,velocity:%.2f\r\n", kalman.getAltitude() / 100.0f, kalman.getVelocity() / 100.0f);
     last_state_print_ms = now_ms;
   }
   /*
@@ -430,4 +433,19 @@ void loop() {
     Serial.printf(">dt_ms:%.6f\r\n", dt * 1000);  // Print dt in milliseconds
     last_dt_print = now_ms;
   }*/
+
+  // SOLVE LATER
+  if ((millis() - last_poll_time) >= POLL_INTERVAL_MS)
+    {
+      if (ReadSensors() != 0)
+        Serial.println("Failed to read data.");
+      else{
+        DisplayData(&sensorData);
+        if (SendData(&sensorData) != 0) 
+        {
+          Serial.println("Failed to send data over UART.");
+        }
+      }
+      last_poll_time = millis();
+    }
 }

@@ -98,5 +98,13 @@ int ReadSensors() {
 
     // Resto dos sensores
 
+    /*
+    if (IsLIS2MDLReady()) {
+        if (ReadLIS2MDL(sensorData.lisData) != 0) {
+            Serial.println("Could not read from LIS2MDL.");
+            return -1;
+        }
+    }
+    */
     return 0;
 }

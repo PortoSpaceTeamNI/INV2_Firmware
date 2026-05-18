@@ -26,9 +26,8 @@ int ConfigureBMP581()
     if (!bmp.setIIRFilterCoeff(BMP5XX_IIR_FILTER_COEFF_3)) {
         Serial.println("BMP581: setIIRFilterCoeff failed.");
         ret = -1;
-    }
-    if (!bmp.setOutputDataRate(BMP5XX_ODR_50_HZ)) {
-        Serial.println("BMP581: setOutputDataRate failed.");
+    // Set to higher output data rate for faster updates
+    if (bmp.setOutputDataRate(BMP5XX_ODR_240_HZ) != 0)
         ret = -1;
     }
     if (!bmp.setPowerMode(BMP5XX_POWERMODE_NORMAL)) {
@@ -38,9 +37,8 @@ int ConfigureBMP581()
     if (!bmp.enablePressure(true)) {
         Serial.println("BMP581: enablePressure failed.");
         ret = -1;
-    }
-    if (!bmp.configureInterrupt(BMP5XX_INTERRUPT_LATCHED, BMP5XX_INTERRUPT_ACTIVE_HIGH, BMP5XX_INTERRUPT_PUSH_PULL, BMP5XX_INTERRUPT_DATA_READY, true)) {
-        Serial.println("BMP581: configureInterrupt failed.");
+    // Configure interrupt for data ready (latched, active low, push-pull)
+    if (bmp.configureInterrupt(BMP5XX_INTERRUPT_LATCHED, BMP5XX_INTERRUPT_ACTIVE_LOW, BMP5XX_INTERRUPT_PUSH_PULL, BMP5XX_INTERRUPT_DATA_READY, true) != 0)
         ret = -1;
     }
     return ret;
