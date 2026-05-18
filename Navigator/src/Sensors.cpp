@@ -72,11 +72,6 @@ int ConfigureSensors() {
 }
 
 int ReadSensors() {
-<<<<<<< HEAD
-    // Interrupt-driven reads only - no polling needed
-    // Data is read in ISR when ready pins trigger
-    // This function can be removed or kept for compatibility
-=======
     if (IsBMP581Ready()) {
         baro1_ready = true;
         if (ReadBMP581(sensorData.bmpData) != 0) {
@@ -101,14 +96,7 @@ int ReadSensors() {
         }
     }
 
-    /*
-    if (IsLIS2MDLReady()) {
-        if (ReadLIS2MDL(sensorData.lisData) != 0) {
-            Serial.println("Could not read from LIS2MDL.");
-            return -1;
-        }
-    }
-    */
->>>>>>> 82799b79a740b71aeff4e4c836784823be307a9d
+    // Resto dos sensores
+
     return 0;
 }
