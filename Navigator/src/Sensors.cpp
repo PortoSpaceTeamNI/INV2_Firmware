@@ -96,6 +96,8 @@ int ReadSensors() {
         }
     }
 
+    // Resto dos sensores
+
     /*
     if (IsLIS2MDLReady()) {
         if (ReadLIS2MDL(sensorData.lisData) != 0) {

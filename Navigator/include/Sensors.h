@@ -18,6 +18,8 @@ typedef struct
     LIS2MDLDataResult lisData;
 } SensorDataResult;
 
+extern bool mag_ready;
+
 int InitializeSensors();
 int ConfigureSensors();
 int ReadSensors();

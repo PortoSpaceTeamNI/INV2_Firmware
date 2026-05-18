@@ -1,7 +1,10 @@
+
 #ifndef COMMS_H
 #define COMMS_H
 
 #include "Sensors.h"
+<<<<<<< HEAD
+=======
 #include <inttypes.h>
 
 #define NAV_SYNC_BYTE 0x55
@@ -62,8 +65,9 @@ typedef struct __attribute__((__packed__))
 #define CORTEX_ID 1
 #define NAVIGATOR_ID 5
 #define BROADCAST_ID 0xFF
+>>>>>>> Nav_2_to_kalman
 
 void InitializeSensorUART();
-void PollAndHandleComms(float altitudeMeters, float verticalVelocityMetersPerSecond, float verticalAccelerationMetersPerSecond2);
+void SendSensorDataOverUART(const SensorDataResult& data);
 
 #endif // COMMS_H
