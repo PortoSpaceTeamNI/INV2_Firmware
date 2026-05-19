@@ -227,6 +227,7 @@ int processMissionControlCommand(packet_t *packet, packet_t *ack)
         return -1; // Failed to send abort event
       }
       ack->cmd = CMD_ACK;
+      ack->payload_size = 1;
       write_packet(ack, UART_INTERFACE);
     }
     break;
