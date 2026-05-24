@@ -7,6 +7,8 @@ static bool bmpInitialized = false;
 static bool lsmInitialized = false;
 static bool lpsInitialized = false;
 
+static bool gpsInitialized = false;
+
 int InitializeSensors() {
     int ret = 0;
 
@@ -25,6 +27,10 @@ int InitializeSensors() {
         ret = -1;
     } else { lpsInitialized = true; Serial.println("LPS22DF sensor initialized."); }
 
+    if (InitializeNEOMQ8() != 0) {
+        Serial.println("Failed to initialize NEO-MQ8.");
+        ret = -1;
+    } else { gpsInitialized = true; Serial.println("NEO-MQ8 GPS initialized."); }
     /*
     if (InitializeLIS2MDL() != 0) {
         Serial.println("Failed to initialize LIS2MDL.");
@@ -59,6 +65,9 @@ int ConfigureSensors() {
         } else Serial.println("LPS22DF sensor configured.");
     } else Serial.println("Skipping LPS22DF configure (init failed).");
 
+    // Configuration is default - for now
+    if (gpsInitialized) ConfigureNEOMQ8();
+
     /*
     if (lisInitialized) {
         if (ConfigureLIS2MDL() != 0) {
@@ -92,6 +101,13 @@ int ReadSensors() {
         baro2_ready = true;
         if (ReadLPS22DF(sensorData.lpsData) != 0) {
             Serial.println("Could not read from LPS22DF.");
+            return -1;
+        }
+    }
+
+    if (IsNEOMQ8Ready()) {
+        if (ReadNEOMQ8(sensorData.gpsData) != 0) {
+            Serial.println("Could not read from NEO-MQ8.");
             return -1;
         }
     }

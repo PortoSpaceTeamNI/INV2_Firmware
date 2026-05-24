@@ -9,6 +9,7 @@
 #include "Sensors/lsm.h"
 #include "Sensors/lps.h"
 #include "Sensors/lis.h"
+#include "Sensors/neo.h"
 
 typedef struct
 {
@@ -16,6 +17,7 @@ typedef struct
     LSM6DSODataResult lsmData;
     LPS22DFDataResult lpsData;
     LIS2MDLDataResult lisData;
+    NEOMQ8DataResult gpsData;
 } SensorDataResult;
 
 extern bool mag_ready;

@@ -54,6 +54,7 @@ float lin_ax, lin_ay, lin_az;
 #define POLL_INTERVAL_MS 10
 
 extern SensorDataResult sensorData;
+unsigned long last_poll_time = 0;
 
 float processSensorData(SensorDataResult* sensorData, Eigen::MatrixXf* x, float Ts_us) {
   if (mag_ready) {
@@ -68,6 +69,7 @@ float processSensorData(SensorDataResult* sensorData, Eigen::MatrixXf* x, float 
     filter.updateIMU(sensorData->lsmData.GyroX, sensorData->lsmData.GyroY, sensorData->lsmData.GyroZ,
                      sensorData->lsmData.AccelX, sensorData->lsmData.AccelY, sensorData->lsmData.AccelZ);
   }
+  /* 
   float q0 = filter.q0;
   float q1 = filter.q1;
   float q2 = filter.q2;
@@ -79,7 +81,19 @@ float processSensorData(SensorDataResult* sensorData, Eigen::MatrixXf* x, float 
 
   gx_s *= 9.81;
   gy_s *= 9.81;
-  gz_s *= 9.81;
+  gz_s *= 9.81; 
+  */
+
+  float roll = filter.getRollRadians();
+  float pitch = filter.getPitchRadians();
+
+  float gx_s = -sinf(pitch);
+  float gy_s = sinf(roll) * cosf(pitch);
+  float gz_s = cosf(roll) * cosf(pitch);
+
+  gx_s *= 9.81f;
+  gy_s *= 9.81f;
+  gz_s *= 9.81f;
 
   lin_ax = sensorData->lsmData.AccelX - gx_s;
   lin_ay = sensorData->lsmData.AccelY - gy_s;
@@ -134,6 +148,9 @@ int32_t readAltitude() {
 
 // Returns: dz/dt in m/s × 100 (fixed-point)
 // =========================
+static unsigned long last_derivative_time = 0;
+static int32_t last_vz = 0;
+
 int32_t readAltitudeDerivative(int32_t current_z, float dt) {
   unsigned long now = micros();
 
