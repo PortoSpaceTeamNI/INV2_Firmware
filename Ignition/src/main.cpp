@@ -21,6 +21,7 @@ volatile bool received_data;
 
 IGNITION_packet_t pkt;
 IGNITION_packet_field_t current_field;
+size_t current_field_size;
 
 uint16_t radio_init(SX1280& radio) {
   uint16_t err = RADIOLIB_ERR_NONE;
@@ -45,10 +46,17 @@ uint16_t radio_init(SX1280& radio) {
   return RADIOLIB_ERR_NONE;
 }
 
+void goToField(IGNITION_packet_field_t field) {
+  current_field = field;
+  current_field_size = 0;
+}
+
 bool parse_packet(byte* data, size_t len) {
   bool is_packet_complete = false;
 
   for (size_t i = 0; i < len; ++i) {
+    ++current_field_size;
+
     switch (current_field) {
       case IGNITION_PACKET_SYNC_e: {
         if (data[i] != PACKET_SYNC) {
@@ -57,58 +65,60 @@ bool parse_packet(byte* data, size_t len) {
         }
 
         pkt.sync = data[i];
-        current_field = IGNITION_PACKET_SENDER_e;
+        goToField(IGNITION_PACKET_SENDER_e);
         break;
       }
       case IGNITION_PACKET_SENDER_e: {
         if (data[i] != PACKET_MISSION_CONTROL_ID) {
           SERIAL.printf("Non Mission Control sender ignored: 0x%X", data[i]);
-          current_field = IGNITION_PACKET_SYNC_e;
+          goToField(IGNITION_PACKET_SYNC_e);
           break;
         }
 
         pkt.sender = data[i];
-        current_field = IGNITION_PACKET_TARGET_e;
+        goToField(IGNITION_PACKET_TARGET_e);
         break;
       }
       case IGNITION_PACKET_TARGET_e: {
         if (data[i] != PACKET_IGNITION_ID) {
           SERIAL.printf("Non Ignition target ignored: 0x%X", data[i]);
-          current_field = IGNITION_PACKET_SYNC_e;
+          goToField(IGNITION_PACKET_SYNC_e);
           break;
         }
 
         pkt.target = data[i];
-        current_field = IGNITION_PACKET_COMMAND_e;
+        goToField(IGNITION_PACKET_COMMAND_e);
         break;
       }
       case IGNITION_PACKET_COMMAND_e: {
-        if (data[i] != PACKET_FIRE_COMMAND) {
+        if (data[i] != PACKET_FIRE_COMMAND_ID) {
           SERIAL.printf("Non Fire command ignored: 0x%X", data[i]);
-          current_field = IGNITION_PACKET_SYNC_e;
+          goToField(IGNITION_PACKET_SYNC_e);
           break;
         }
 
         pkt.command = data[i];
-        current_field = IGNITION_PACKET_PAYLOAD_SIZE_e;
+        goToField(IGNITION_PACKET_PAYLOAD_SIZE_e);
         break;
       }
       case IGNITION_PACKET_PAYLOAD_SIZE_e: {
         if (data[i] != PACKET_FIRE_COMMAND_PAYLOAD_SIZE) {
           SERIAL.printf("Non 0 payload size ignored: 0x%X", data[i]);
-          current_field = IGNITION_PACKET_SYNC_e;
+          goToField(IGNITION_PACKET_SYNC_e);
           break;
         }
 
         pkt.payload_size = data[i];
-        current_field = IGNITION_PACKET_CRC_e;
+        goToField(IGNITION_PACKET_CRC_e);
         break;
       }
       case IGNITION_PACKET_CRC_e: {
-        // TODO: CRC check (the two bytes need to be checked)
+        pkt.crc |= (current_field_size == 1 ? data[i] : (uint16_t)data[i] << 8);
 
-        current_field = IGNITION_PACKET_SYNC_e;
-        is_packet_complete = true;
+        if (current_field_size == sizeof(uint16_t)) {
+          goToField(IGNITION_PACKET_SYNC_e);
+          is_packet_complete = true;
+        }
         break;
       }
     }
@@ -128,6 +138,7 @@ void setup() {
   received_data = false;
   pkt = {0};
   current_field = IGNITION_PACKET_SYNC_e;
+  current_field_size = 0;
 }
 
 void loop() {
@@ -145,8 +156,25 @@ void loop() {
     
     } else {
       bool is_ignite_packet_complete = parse_packet(data, len);
-      if (flag_ignite && is_ignite_packet_complete) {
-        digitalWrite(PIN_IGNITE_TRIGGER, HIGH);
+      if (is_ignite_packet_complete) {
+        byte ack[] = {
+          PACKET_SYNC,                      // Sync
+          PACKET_IGNITION_ID,               // Sender
+          PACKET_MISSION_CONTROL_ID,        // Target
+          PACKET_ACK_COMMAND_ID,            // Command
+          PACKET_ACK_COMMAND_PAYLOAD_SIZE,  // Payload Size
+          PACKET_FIRE_COMMAND_ID,           // Payload
+          0, 0                              // TODO: CRC
+        };
+
+        err = radio.transmit(ack, sizeof(ack));
+        if (err != RADIOLIB_ERR_NONE) {
+          SERIAL.printf("Failed radio data sending: Error code %d\n", err);
+        }
+
+        if (flag_ignite) {
+          digitalWrite(PIN_IGNITE_TRIGGER, HIGH);
+        }
       }
     }
 
