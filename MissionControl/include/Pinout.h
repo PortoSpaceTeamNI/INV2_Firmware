@@ -1,0 +1,28 @@
+#ifndef PINOUT_H
+#define PINOUT_H
+
+#define CAN_INT_PIN 0
+#define CAN_CS_PIN 1
+#define BUZZER_PIN 2
+#define RADIO_RESET_PIN 3
+#define RADIO_TX_ENABLE_PIN 5
+#define RADIO_RX_ENABLE_PIN 6
+#define LED_PIN 8
+#define ARM_DETECT_PIN 9
+#define ABORT_DETECT_PIN 10
+#define FIRE_DETECT_PIN 11
+#define RS_DI_PIN 12
+#define RS_RO_PIN 13
+#define RADIO_DIO1_PIN 14
+#define RADIO_BUSY_PIN 15
+#define SPIO0_MISO_PIN 16
+#define RADIO_CS_PIN 17
+#define SPIO0_SCK_PIN 18
+#define SPIO0_MOSI_PIN 19
+#define RS_TX_ENABLE_PIN 22
+
+// DEBUG UART, DISABLE IN FINAL DESIGN
+#define DEBUG_TX_PIN 20
+#define DEBUG_RX_PIN 21
+
+#endif // PINOUT_H
