@@ -24,6 +24,11 @@
 // RS485 debug logging
 #define RS485_DEBUG_LOG false
 
+// Control Configs
+#define ARM_AUTO_DISARM_TIMEOUT_MS 30000  // Auto-disarm after 30 seconds
+#define BUZZER_BEEP_INTERVAL_MS 1000      // Beep every 1 second when armed
+#define BUZZER_BEEP_DURATION_MS 100       // Buzzer beep duration
+
 // Radio Configs
 #define RADIO_RESPONSE_TIMEOUT_MS 500
 

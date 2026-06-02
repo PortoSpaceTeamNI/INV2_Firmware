@@ -18,6 +18,7 @@ void setup() {
   Serial2.begin(115200);
 
   pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(LED_PIN, OUTPUT);
 
   Serial.begin(115200);
   

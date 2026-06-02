@@ -5,7 +5,7 @@
 #include "Radio.h"
 #include "RS485.h"
 #include "ARX.h"
-#include "Buttons.h"
+#include "Controls.h"
 
 int createTasks() {
   if (xTaskCreate(vRadioTask, "Radio", 1024, NULL, 3, NULL) != pdPASS) {
@@ -22,7 +22,7 @@ int createTasks() {
     return -1;
   } 
 
-  if (xTaskCreate(vButtonsTask, "Buttons", 512, NULL, 5, NULL) != pdPASS) {
+  if (xTaskCreate(vControlsTask, "Controls", 512, NULL, 5, NULL) != pdPASS) {
     return -1;
   }
 

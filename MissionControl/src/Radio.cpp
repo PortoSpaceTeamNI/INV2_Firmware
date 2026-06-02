@@ -43,11 +43,13 @@ static inline void rfIdle() {
 static inline void rfTx() {
   digitalWrite(RADIO_RX_ENABLE_PIN, LOW);
   digitalWrite(RADIO_TX_ENABLE_PIN, HIGH);
+  digitalWrite(LED_PIN, HIGH); // LED on during transmission
 }
 
 static inline void rfRx() {
   digitalWrite(RADIO_TX_ENABLE_PIN, LOW);   
   digitalWrite(RADIO_RX_ENABLE_PIN, HIGH);
+  //digitalWrite(LED_PIN, LOW); // LED off during reception
 }
 
 int setupRadio() {
@@ -83,7 +85,6 @@ int setupRadio() {
     Serial2.println(err);
     return -1;
   }
-
   Serial2.println("OK");
   Serial2.printf("  %.3f MHz  BW=%.3f kHz  SF=%d  CR=4/%d  ACK timeout=%lu ms\n",
                 RADIO_FREQUENCY, RADIO_BANDWIDTH, RADIO_SPREAD_FACTOR,
@@ -143,7 +144,6 @@ void vRadioTask(void *pvParameters)
       {
         // Transmit command over radio
         write_packet(&txPacket, RADIO_INTERFACE);
-
         // Mark that we're waiting for a response
         radioWaitingForResponse = true;
         radioWaitingStartTime = millis();

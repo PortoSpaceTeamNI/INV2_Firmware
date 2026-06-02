@@ -139,10 +139,12 @@ extern SX1281 radio;
 int write_to_radio(uint8_t *buffer, size_t size)
 {
     // Start non-blocking transmission via RadioLib
+    digitalWrite(LED_PIN, HIGH); // LED on during transmission
     int err = radio.startTransmit(buffer, size);
     if (err != RADIOLIB_ERR_NONE) {
         return -1;
     }
+    digitalWrite(LED_PIN, LOW); // LED off after transmission
     return 0;
 }
 
