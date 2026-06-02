@@ -19,8 +19,8 @@
 SX1280 radio;
 volatile bool received_data;
 
-IGNITION_packet_t pkt;
-IGNITION_packet_field_t current_field;
+packet_t pkt;
+packet_field_t current_field;
 size_t current_field_size;
 
 uint16_t radio_init(SX1280& radio) {
@@ -46,7 +46,7 @@ uint16_t radio_init(SX1280& radio) {
   return RADIOLIB_ERR_NONE;
 }
 
-void goToField(IGNITION_packet_field_t field) {
+void goToField(packet_field_t field) {
   current_field = field;
   current_field_size = 0;
 }
@@ -58,65 +58,65 @@ bool parse_packet(byte* data, size_t len) {
     ++current_field_size;
 
     switch (current_field) {
-      case IGNITION_PACKET_SYNC_e: {
+      case PACKET_SYNC: {
         if (data[i] != PACKET_SYNC) {
           SERIAL.printf("Non Sync byte ignored: 0x%X", data[i]);
           break;
         }
 
         pkt.sync = data[i];
-        goToField(IGNITION_PACKET_SENDER_e);
+        goToField(PACKET_SENDER);
         break;
       }
-      case IGNITION_PACKET_SENDER_e: {
-        if (data[i] != PACKET_MISSION_CONTROL_ID) {
+      case PACKET_SENDER: {
+        if (data[i] != MISSION_CONTROL_ID) {
           SERIAL.printf("Non Mission Control sender ignored: 0x%X", data[i]);
-          goToField(IGNITION_PACKET_SYNC_e);
+          goToField(PACKET_SYNC);
           break;
         }
 
         pkt.sender = data[i];
-        goToField(IGNITION_PACKET_TARGET_e);
+        goToField(PACKET_TARGET);
         break;
       }
-      case IGNITION_PACKET_TARGET_e: {
-        if (data[i] != PACKET_IGNITION_ID) {
+      case PACKET_TARGET: {
+        if (data[i] != IGNITION_ID) {
           SERIAL.printf("Non Ignition target ignored: 0x%X", data[i]);
-          goToField(IGNITION_PACKET_SYNC_e);
+          goToField(PACKET_SYNC);
           break;
         }
 
         pkt.target = data[i];
-        goToField(IGNITION_PACKET_COMMAND_e);
+        goToField(PACKET_COMMAND);
         break;
       }
-      case IGNITION_PACKET_COMMAND_e: {
-        if (data[i] != PACKET_FIRE_COMMAND_ID) {
+      case PACKET_COMMAND: {
+        if (data[i] != FIRE_COMMAND_ID) {
           SERIAL.printf("Non Fire command ignored: 0x%X", data[i]);
-          goToField(IGNITION_PACKET_SYNC_e);
+          goToField(PACKET_SYNC);
           break;
         }
 
         pkt.command = data[i];
-        goToField(IGNITION_PACKET_PAYLOAD_SIZE_e);
+        goToField(PACKET_PAYLOAD_SIZE);
         break;
       }
-      case IGNITION_PACKET_PAYLOAD_SIZE_e: {
-        if (data[i] != PACKET_FIRE_COMMAND_PAYLOAD_SIZE) {
+      case PACKET_PAYLOAD_SIZE: {
+        if (data[i] != FIRE_COMMAND_PAYLOAD_SIZE) {
           SERIAL.printf("Non 0 payload size ignored: 0x%X", data[i]);
-          goToField(IGNITION_PACKET_SYNC_e);
+          goToField(PACKET_SYNC);
           break;
         }
 
         pkt.payload_size = data[i];
-        goToField(IGNITION_PACKET_CRC_e);
+        goToField(PACKET_CRC);
         break;
       }
-      case IGNITION_PACKET_CRC_e: {
+      case PACKET_CRC: {
         pkt.crc |= (current_field_size == 1 ? data[i] : (uint16_t)data[i] << 8);
 
         if (current_field_size == sizeof(uint16_t)) {
-          goToField(IGNITION_PACKET_SYNC_e);
+          goToField(PACKET_SYNC);
           is_packet_complete = true;
         }
         break;
@@ -137,7 +137,7 @@ void setup() {
 
   received_data = false;
   pkt = {0};
-  current_field = IGNITION_PACKET_SYNC_e;
+  current_field = PACKET_SYNC;
   current_field_size = 0;
 }
 
@@ -147,7 +147,7 @@ void loop() {
   if (received_data) {
     received_data = false;
 
-    byte data[sizeof(IGNITION_packet_t)];
+    byte data[sizeof(packet_t)];
 
     size_t len = radio.getPacketLength();
     uint16_t err = radio.readData(data, len);
@@ -158,12 +158,12 @@ void loop() {
       bool is_ignite_packet_complete = parse_packet(data, len);
       if (is_ignite_packet_complete) {
         byte ack[] = {
-          PACKET_SYNC,                      // Sync
-          PACKET_IGNITION_ID,               // Sender
-          PACKET_MISSION_CONTROL_ID,        // Target
-          PACKET_ACK_COMMAND_ID,            // Command
-          PACKET_ACK_COMMAND_PAYLOAD_SIZE,  // Payload Size
-          PACKET_FIRE_COMMAND_ID,           // Payload
+          SYNC,                      // Sync
+          IGNITION_ID,               // Sender
+          MISSION_CONTROL_ID,        // Target
+          ACK_COMMAND_ID,            // Command
+          ACK_COMMAND_PAYLOAD_SIZE,  // Payload Size
+          FIRE_COMMAND_ID,           // Payload
           0, 0                              // TODO: CRC
         };
 
