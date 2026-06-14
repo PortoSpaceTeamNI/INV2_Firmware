@@ -1,6 +1,8 @@
 # Refactor: Monorepo with a Shared Core Library
 
-**Status:** In progress (Phase 0 + command-enum unification landed — see §9 Progress log)
+**Status:** Phases 0–5 complete. Full Option-3 monorepo layout achieved: single
+`platformio.ini`, all sources under `src/<board>/`, all libraries under `lib/`. Remaining work
+is optional quality-of-life (see §9 Still TODO).
 **Scope:** Repository layout + shared code extraction. Command-protocol unification *does*
 change behaviour on the wire (intentionally — it fixes a divergence bug); see §9.
 **Author:** drafted with Claude
@@ -245,13 +247,126 @@ directory and the change is reviewable in isolation:
   covers serialize↔parse roundtrip, resync, and the payload clamp. `pio test -e native` →
   9/9 green. `pio run -d {HYDRA,LIFT,OBC}` all build with `rocket_core` in the dependency graph.
 
+### Phase 1 — CORTEX adopted as bus master; command numbering re-canonicalised (DONE, builds verified)
+
+`CORTEX/CORTEX_V1/` (a FreeRTOS, task-based rewrite of the OBC: MissionControl /
+StateMachine / DataPolling / RS485 tasks, mutex-protected `RocketData`, valve-routing table,
+richer flight state machine) is now **the** flight computer and bus master. The
+previous-generation `OBC/` super-loop is superseded.
+
+CORTEX had re-introduced the very divergence Phase 0 removed — it shipped its own `command_t`,
+`manual_command_t`, `packet_t`, and board-ID `#define`s, none of them from `rocket_core`. Most
+damaging: CORTEX numbered `CMD_MANUAL_EXEC = 7` while the `rocket_core`-based HYDRA/LIFT had it
+at `10`, so CORTEX valve-actuation frames were decoded by HYDRA as `CMD_LAUNCH_OVERRIDE` —
+manual valve control across CORTEX↔HYDRA was silently broken. (Polling worked only because
+`CMD_STATUS = 1` happened to line up.)
+
+Resolution (decision: **CORTEX's numbering is canonical**, since it is the master):
+
+- **`rc_commands.h` re-numbered** to CORTEX's leaner set: `NONE,STATUS,ABORT,STOP,ARM,FIRE,
+  FILL_EXEC,MANUAL_EXEC,ACK,NACK,CMD_COUNT`. The old OBC-only `READY`/`LAUNCH_OVERRIDE`/
+  `FILL_RESUME` commands are gone — CORTEX drives those phases through its event-based state
+  machine, not dedicated wire commands. HYDRA/LIFT only reference `CMD_STATUS`/`CMD_ACK`/
+  `CMD_MANUAL_EXEC` by name, so they pick up the new values automatically and stay
+  wire-compatible with the master.
+- **`rc_ids.h`** gained the canonical CORTEX-era names `MISSION_CONTROL_ID` (0) and `CORTEX_ID`
+  (1), with `GROUND_ID`/`OBC_ID` kept as backwards-compatible aliases (same values).
+- **CORTEX now consumes `rocket_core`**: its `Commands.h` includes `rc_commands.h` +
+  `rc_manual.h` (keeping only the CORTEX/GUI-local `fill_command_t` and the error `#define`s);
+  its `Communications.h` includes `rc_ids.h` instead of local ID `#define`s; `platformio.ini`
+  gained `lib_extra_dirs = ../../lib`.
+- **Tests:** `test_command_values_pinned` updated to the new numbering. `pio test -e native` →
+  9/9 green. `pio run -d {CORTEX,HYDRA,LIFT}` all build with `rocket_core` in the graph.
+- **Repo structure:** the previous-generation `OBC/` was retired to `_old_code/OBC/` (reference
+  only; it does not build against the new enum), and `CORTEX/CORTEX_V1/` was flattened to
+  `CORTEX/`. CORTEX's `lib_extra_dirs` is therefore `../lib`.
+
+### Phase 2 — CORTEX transport migrated onto the shared parser (DONE, build verified)
+
+CORTEX's `Communications.{h,cpp}` no longer defines its own frame. It now pulls `packet_t`,
+`SYNC_BYTE`, `MAX_PAYLOAD_SIZE`, `HEADER_SIZE`, `MAX_FRAME_SIZE` from `rc_packet.h` and uses
+`rc_parse_byte` / `rc_serialize` from `rc_parser.h`:
+
+- Deleted CORTEX's local `packet_t` (was `MAX_PAYLOAD_SIZE = 200`, now the shared 150), its
+  `cmd_parse_state_t`, and its copy of `parse_input`. `MAX_PACKET_SIZE` is now an alias of
+  `MAX_FRAME_SIZE`.
+- The frame's `begin` timestamp (timeout reference) was **removed from the struct** and moved
+  into the transport: `read_packet` keeps a per-interface `begin` array and `read_stream()`
+  stamps it when the SYNC byte is consumed (`RC_SYNC` → non-`RC_SYNC` transition). This is the
+  §5 "split pure parsing from I/O + timing" split, applied.
+- Overflow behaviour is now the shared one: `rc_parse_byte` *clamps* an oversized length byte to
+  `MAX_PAYLOAD_SIZE` (CORTEX's old copy reset to SYNC). `interface_t`, `write_to_rs485`,
+  `create_packet`, the timeout logic and the addressing/CRC checks are unchanged.
+
+### Phase 3 — HYDRA & LIFT transports migrated onto the shared parser (DONE, builds verified)
+
+Both slaves now use the same approach as CORTEX (Phase 2). Their `include/Comms.h` dropped the
+local `packet_t`, `cmd_parse_state_t`, `SYNC_BYTE`/`MAX_PAYLOAD_SIZE`/`HEADER_SIZE` and the
+copy-pasted board-ID `#define`s, pulling them from `rc_ids.h` / `rc_packet.h` / `rc_parser.h`
+instead. Their `src/Comms.cpp` replaced the duplicated `parse_input` with `rc_parse_byte` and
+the hand-rolled serializer in `write_packet` with `rc_serialize` (then `rs485_send`).
+
+- Per-board identity is unchanged in spirit: HYDRA still sets `DEFAULT_ID` in `Comms.h`, LIFT
+  still sets `MY_ID` in `HardwareCfg.h` — both now resolve against `rc_ids.h`.
+- The frame's `begin` timestamp left the struct; each `read_packet` keeps a single local `begin`
+  (these boards have one serial port — Serial2 on HYDRA, Serial1 on LIFT) stamped on the
+  `RC_SYNC`→non-`RC_SYNC` transition, using `millis()` as before.
+- Two small behaviour changes, both improvements and consistent with CORTEX: `read_packet` now
+  drains the serial buffer in a `while` loop (was one byte per call), and an oversized length
+  byte is *clamped* by `rc_parse_byte` rather than handled ad hoc.
+- Side fix: including `rc_ids.h` before `HardwareCfg.h` in LIFT removed a latent include-order
+  fragility (`HardwareCfg.h` references `LIFT_BOTTLE_ID` to define `MY_ID`).
+
+With this, **every board on the live command bus (CORTEX master + HYDRA/LIFT slaves) shares one
+`packet_t` and one parser/serializer.** `pio test -e native` → 9/9; `pio run -d {CORTEX,HYDRA,LIFT}`
+all SUCCESS.
+
+### Phase 4 — Crc library consolidated; VALVE_MS widened; CLAUDE.md refreshed (DONE)
+
+- **`lib/Crc/`** created at the repo root from the four identical per-board copies.
+  `CORTEX/lib/Crc/`, `HYDRA/lib/Crc/`, `LIFT/lib/Crc/`, `Navigator/lib/Crc/` removed.
+  HYDRA and LIFT pick it up via the existing `lib_extra_dirs = ../lib`; Navigator's local copy
+  was vestigial (unused) and was simply deleted.
+- **`HYDRA`: `CMD_MANUAL_VALVE_MS` now decodes a `uint16_t` (little-endian `payload[3..4]`)**
+  instead of a single `uint8_t`. `payload_size` check raised to `>= 5`. The `rc_manual.h`
+  comment updated to reflect the 5-byte layout `[VALVE_MS, valve, state, ms_lo, ms_hi]`.
+  Durations up to 65535 ms are now encodable on the wire.
+- **`CLAUDE.md` fully refreshed**: OBC replaced by CORTEX throughout, board table updated,
+  `rocket_core` shared-lib section added, "OBC state machine" section replaced by "CORTEX
+  flight computer" section, gotchas updated (removed OBC-specific notes, added CORTEX/LIFT
+  include-order note). Build examples now show `pio run -d CORTEX`.
+
+### Phase 5 — Full Option-3 monorepo layout (DONE, all envs verified)
+
+The per-board project directories (`CORTEX/`, `HYDRA/`, `LIFT/`, `Navigator/`, `PocketSat/`)
+are gone. Everything now lives under the repo root:
+
+- **`src/<board>/`** holds each board's `.cpp` sources and board-specific headers (previously
+  split between `<BOARD>/src/` and `<BOARD>/include/`), merged into a flat tree. Each env
+  gains `-Isrc/<board>` in `build_flags` so bare `#include "Pinout.h"` etc. still resolve.
+- **`lib/`** holds all shared and vendored libraries (`rocket_core`, `Crc`, `LoRa`,
+  `AD5593R`, `MAX31856`, `SPI`, `HX711`, `ArduinoEigen`, `ArxTypeTraits`, `FastTrig`, `LPS`,
+  `HDC302x`). PlatformIO's Library Dependency Finder compiles only what each env includes —
+  Navigator's Eigen never appears in a HYDRA build. Previously-duplicated `SPI` (three copies)
+  and `LPS` (two copies) are now a single copy each.
+- **Root `platformio.ini`** expanded to six environments: `cortex`, `hydra`, `lift`,
+  `navigator`, `pocketsat`, `native`. Per-board `platformio.ini` files deleted. `pio run`
+  (no arguments) builds all five boards. `pio run -e cortex` builds a single one.
+- **Per-board `platformio.ini` files deleted**: `CORTEX/platformio.ini`, `HYDRA/platformio.ini`,
+  `LIFT/platformio.ini`, `Navigator/platformio.ini`, `PocketSat/platformio.ini`.
+- **Pre-existing Navigator bug fixed**: `Navigator/src/Comms.cpp` referenced `READ_OBC_PIN` /
+  `WRITE_OBC_PIN` which were never defined in `Pinout.h`. Corrected to `OBC_RX_PIN` /
+  `OBC_TX_PIN` (the names that exist in `Pinout.h`). Navigator was not building before this
+  migration; now it does.
+
+Build verification: `pio run` → 5/5 SUCCESS; `pio test -e native` → 9/9 PASSED.
+
 ### Still TODO
 
-- Migrate each board's transport (`read_packet`/`write_packet`, `parse_input`) to call
-  `rocket_core`'s parser/serializer and drop the duplicated `packet_t` + frame `#define`s
-  (currently still per-board). This is the part with the `packet->begin` timing-field friction
-  noted in §5.
-- Fold remaining duplicated drivers (`Crc`, `Adafruit_SPIDevice`, `LPS`) into `lib/`.
-- Optionally complete the physical directory move to `src/<board>/` per §3/§4.
-- Widen HYDRA's `CMD_MANUAL_VALVE_MS` handler to read a 2-byte duration (currently 1 byte).
-- Unify `state_t` (still duplicated: OBC local copy vs `rc_states.h`).
+- Optionally promote CORTEX's `fill_command_t` (and `RocketState`) into `rocket_core` if the
+  ground GUI or other boards need to share them.
+- HYDRA's `CMD_MANUAL_VALVE_MS` handler still blocks the slave loop with `delay(ms)` — make
+  it non-blocking (timer-based state) when time allows.
+- Enable CRC end-to-end: implement `check_crc()` on all boards and flip `CRC_ENABLED true`.
+  The shared `Crc` library and stubs are already in place; the only work is wiring them up
+  and adding a protocol test.

@@ -9,15 +9,20 @@
 #ifndef ROCKET_CORE_RC_IDS_H
 #define ROCKET_CORE_RC_IDS_H
 
-#define GROUND_ID      0
-#define OBC_ID         1
-#define HYDRA_UF_ID    2
-#define HYDRA_LF_ID    3
-#define HYDRA_FS_ID    4
-#define NAVIGATOR_ID   5
-#define LIFT_TANK_ID   6
-#define LIFT_BOTTLE_ID 7
-#define LIFT_THRUST_ID 8
-#define BROADCAST_ID   0xFF
+// Canonical (CORTEX-era) names.
+#define MISSION_CONTROL_ID 0   // operator / ground station (was GROUND_ID)
+#define CORTEX_ID          1   // flight computer / bus master (was OBC_ID)
+#define HYDRA_UF_ID        2
+#define HYDRA_LF_ID        3
+#define HYDRA_FS_ID        4
+#define NAVIGATOR_ID       5
+#define LIFT_TANK_ID       6
+#define LIFT_BOTTLE_ID     7
+#define LIFT_THRUST_ID     8
+#define BROADCAST_ID       0xFF
+
+// Backwards-compatible aliases for the previous-generation OBC naming.
+#define GROUND_ID MISSION_CONTROL_ID
+#define OBC_ID    CORTEX_ID
 
 #endif // ROCKET_CORE_RC_IDS_H

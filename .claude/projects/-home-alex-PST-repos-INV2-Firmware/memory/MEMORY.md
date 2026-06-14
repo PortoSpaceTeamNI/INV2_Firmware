@@ -1,0 +1,2 @@
+- [CORTEX is the new bus master](cortex-is-new-bus-master.md) — CORTEX_V1 supersedes OBC as flight computer/RS485 master
+- [Canonical command numbering](cortex-command-numbering-canonical.md) — wire command_t follows CORTEX's leaner set in rocket_core

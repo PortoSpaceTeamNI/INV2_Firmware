@@ -1,3 +1,0 @@
-remove led on and off commands
-make a master comms.h file with all commands
-make sync and async functions for comms

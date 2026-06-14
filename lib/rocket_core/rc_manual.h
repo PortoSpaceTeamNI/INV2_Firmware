@@ -20,7 +20,7 @@ typedef enum
     CMD_MANUAL_SD_LOG_STOP,
     CMD_MANUAL_SD_STATUS,
     CMD_MANUAL_VALVE_STATE, // payload: [VALVE_STATE, valve, state]
-    CMD_MANUAL_VALVE_MS,    // payload: [VALVE_MS, valve, state, ms]
+    CMD_MANUAL_VALVE_MS,    // payload: [VALVE_MS, valve, state, ms_lo, ms_hi] (uint16_t little-endian)
     CMD_MANUAL_ACK,
     manual_cmd_size         // keep last
 } manual_command_t;
