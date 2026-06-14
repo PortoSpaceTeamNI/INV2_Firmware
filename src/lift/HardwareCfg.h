@@ -1,6 +1,10 @@
 #ifndef HARDWARE_CFG_H
 #define HARDWARE_CFG_H
 
+#ifndef ROCKET_CORE_RC_IDS_H
+#error "rc_ids.h must be included before HardwareCfg.h (MY_ID uses LIFT_BOTTLE_ID)"
+#endif
+
 // Serial settings
 #define USB_BAUD_RATE 115200
 #define RS485_BAUD_RATE 115200 

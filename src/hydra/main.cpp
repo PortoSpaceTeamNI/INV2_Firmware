@@ -22,6 +22,12 @@
 bool setup_error = false;
 data_t my_data = {0};
 
+static bool valve_timer_active = false;
+static uint32_t valve_timer_start_ms = 0;
+static uint16_t valve_timer_duration_ms = 0;
+static uint8_t valve_timer_valve = 0;
+static uint8_t valve_timer_return_state = 0;
+
 void run_command(packet_t *packet)
 {
     if (packet->cmd == CMD_STATUS)
@@ -63,19 +69,20 @@ void run_command(packet_t *packet)
                                      HEADER_SIZE + ack_packet.payload_size);
             write_packet(&ack_packet);
         } else if (packet->payload_size >= 5 && packet->payload[0] == CMD_MANUAL_VALVE_MS) {
-            // set valve state for a certain amount of milliseconds
+            // set valve state for a certain amount of milliseconds (non-blocking)
             valve_t valve = (valve_t)(packet->payload[1]);
             uint8_t state = packet->payload[2];
             uint16_t ms;
             memcpy(&ms, &packet->payload[3], sizeof(ms)); // little-endian uint16
 
-            // TODO: Refactor this to be non-blocking, 
-            // we don't want to block the main loop while waiting for the valve to change state back
             valve_set(&my_data, valve, state);
-            delay(ms);
-            valve_set(&my_data, valve, !state);
+            valve_timer_active = true;
+            valve_timer_start_ms = millis();
+            valve_timer_duration_ms = ms;
+            valve_timer_valve = (uint8_t)valve;
+            valve_timer_return_state = !state;
 
-            // send ack packet
+            // send ack immediately; the timer fires asynchronously in loop()
             packet_t ack_packet;
             ack_packet.sender_id = DEFAULT_ID;
             ack_packet.target_id = packet->sender_id;
@@ -133,10 +140,13 @@ void setup()
 
 void loop()
 {
-    static unsigned long last_test = 0;
+    if (valve_timer_active && (millis() - valve_timer_start_ms >= valve_timer_duration_ms))
+    {
+        valve_set(&my_data, valve_timer_valve, valve_timer_return_state);
+        valve_timer_active = false;
+    }
+
     int error;
-    // check if we have new data
-    // if we get a valid message, execute the command associated to it
     packet_t *packet = read_packet(&error);
     if (packet != NULL && error == CMD_READ_OK)
     {

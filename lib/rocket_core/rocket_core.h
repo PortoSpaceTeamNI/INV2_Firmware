@@ -12,14 +12,10 @@
 #include "rc_ids.h"
 #include "rc_commands.h"
 #include "rc_manual.h"
-#include "rc_states.h"
 #include "rc_packet.h"
 #include "rc_parser.h"
 #include "rc_packet_utils.h"
-// rc_state_machine.h is NOT included here: its RocketState enum values (IDLE,
-// ABORT, ARMED, IGNITION, LAUNCH…) conflict with rc_states.h's state_t names.
-// Include rc_state_machine.h directly in files that need it (StateMachine.h,
-// test_state_machine).
+#include "rc_state_machine.h"
 #include "rc_valve_routing.h"
 
 #endif // ROCKET_CORE_H

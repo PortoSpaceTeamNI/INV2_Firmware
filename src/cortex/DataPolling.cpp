@@ -71,9 +71,9 @@ static void mapHydraRawToRocketData(uint8_t hydraId, const HydraStatusRaw &raw, 
   case HYDRA_UF_ID:
     data->hydraUFData.valve_vent = hydraValveStateBit(raw.valve_states, HYDRA_BIT_CONTROLLED_1);
     data->hydraUFData.tank_top_pressure = (uint16_t)raw.pressure1;
-    data->hydraUFData.probe_temperature_1 = (uint16_t)raw.thermo1;
-    data->hydraUFData.probe_temperature_2 = (uint16_t)raw.thermo2;
-    data->hydraUFData.probe_temperature_3 = (uint16_t)raw.thermo3;
+    data->hydraUFData.probe_temperature_1 = raw.thermo1;
+    data->hydraUFData.probe_temperature_2 = raw.thermo2;
+    data->hydraUFData.probe_temperature_3 = raw.thermo3;
     break;
   case HYDRA_LF_ID:
     data->hydraLFData.valve_abort = hydraValveStateBit(raw.valve_states, HYDRA_BIT_CONTROLLED_1);
@@ -81,9 +81,9 @@ static void mapHydraRawToRocketData(uint8_t hydraId, const HydraStatusRaw &raw, 
     data->hydraUFData.valve_pressurizing = hydraValveStateBit(raw.valve_states, HYDRA_BIT_CONTROLLED_3);
     data->hydraLFData.tank_bottom_pressure = (uint16_t)raw.pressure2;
     data->hydraLFData.chamber_pressure = (uint16_t)raw.pressure3;
-    data->hydraLFData.probe_temperature_1 = (uint16_t)raw.thermo2;
-    data->hydraLFData.probe_temperature_2 = (uint16_t)raw.thermo1;
-    data->hydraLFData.chamber_temperature = (uint16_t)raw.thermo3;
+    data->hydraLFData.probe_temperature_1 = raw.thermo2;
+    data->hydraLFData.probe_temperature_2 = raw.thermo1;
+    data->hydraLFData.chamber_temperature = raw.thermo3;
     break;
   case HYDRA_FS_ID:
     data->hydraFSData.valve_ox_fill = hydraValveStateBit(raw.valve_states, HYDRA_BIT_SERVO);
@@ -94,8 +94,8 @@ static void mapHydraRawToRocketData(uint8_t hydraId, const HydraStatusRaw &raw, 
     data->hydraFSData.valve_n2_quick_dc = hydraValveStateBit(raw.valve_states, HYDRA_BIT_QUICK_DC_2);
     data->hydraFSData.ox_pressure = (uint16_t)raw.pressure1;
     data->hydraFSData.n2_pressure = (uint16_t)raw.pressure3;
-    data->hydraFSData.n2_temperature = (uint16_t)raw.thermo1;
-    data->hydraFSData.ox_temperature = (uint16_t)raw.thermo2;
+    data->hydraFSData.n2_temperature = raw.thermo1;
+    data->hydraFSData.ox_temperature = raw.thermo2;
     break;
   default:
     break;
@@ -223,8 +223,6 @@ void processStatusAck(packet_t *ack)
   Serial1.println();
   */
   // Process status acknowledgment based on sender ID
-  // TODO: Maybe will change if bools are sent as bitfields
-
   // Take mutex before accessing rocketData
   if (xSemaphoreTake(rocketDataMutex, portMAX_DELAY) == pdTRUE)
   {

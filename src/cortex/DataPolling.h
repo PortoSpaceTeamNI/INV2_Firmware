@@ -9,9 +9,7 @@
 #define VALVE_OPEN 1
 #define VALVE_CLOSED 0
 
-// TODO: Double check all data types and units
-
-// IMPORTANT: All 16-bit values are the unit * 100 (e.g. 20.00 bar = 2000)
+// IMPORTANT: All 16-bit values are the unit * 100 (e.g. 20.00 bar = 2000, -20.00 °C = -2000)
 
 struct __attribute__((__packed__)) CortexData {
     RocketState rocket_state;
@@ -31,9 +29,9 @@ struct __attribute__((__packed__)) HydraUFData {
     uint8_t valve_vent;
     uint8_t valve_pressurizing;
     uint16_t tank_top_pressure;
-    uint16_t probe_temperature_1;
-    uint16_t probe_temperature_2;
-    uint16_t probe_temperature_3; 
+    int16_t probe_temperature_1;
+    int16_t probe_temperature_2;
+    int16_t probe_temperature_3;
 };
 
 struct __attribute__((__packed__)) HydraLFData {
@@ -41,9 +39,9 @@ struct __attribute__((__packed__)) HydraLFData {
     uint8_t valve_main;
     uint16_t tank_bottom_pressure;
     uint16_t chamber_pressure;
-    uint16_t probe_temperature_1;
-    uint16_t probe_temperature_2;
-    uint16_t chamber_temperature;
+    int16_t probe_temperature_1;
+    int16_t probe_temperature_2;
+    int16_t chamber_temperature;
 };
 
 struct __attribute__((__packed__)) HydraFSData {
@@ -55,8 +53,8 @@ struct __attribute__((__packed__)) HydraFSData {
     uint8_t valve_n2_quick_dc;
     uint16_t n2_pressure;
     uint16_t ox_pressure;
-    uint16_t n2_temperature;
-    uint16_t ox_temperature;
+    int16_t n2_temperature;
+    int16_t ox_temperature;
 };
 
 struct __attribute__((__packed__)) LiftTankData {

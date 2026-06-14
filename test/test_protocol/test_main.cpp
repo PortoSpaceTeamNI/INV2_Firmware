@@ -60,12 +60,26 @@ static void test_board_id_aliases(void)
     TEST_ASSERT_EQUAL_INT(CORTEX_ID, OBC_ID);
 }
 
-static void test_state_values_pinned(void)
+/* ------------------------------------------------------------------ */
+/* RocketState values pinned (these are sent on the wire)             */
+/* ------------------------------------------------------------------ */
+static void test_rocket_state_values_pinned(void)
 {
-    TEST_ASSERT_EQUAL_INT(0, IDLE);
-    TEST_ASSERT_EQUAL_INT(13, ABORT);
-    TEST_ASSERT_EQUAL_INT(14, state_count);
-    TEST_ASSERT_EQUAL_INT(-1, S_NONE);
+    TEST_ASSERT_EQUAL_INT(0,  IDLE);
+    TEST_ASSERT_EQUAL_INT(1,  ABORT);
+    TEST_ASSERT_EQUAL_INT(2,  FILL_N2);
+    TEST_ASSERT_EQUAL_INT(3,  PRE_PRESSURIZE);
+    TEST_ASSERT_EQUAL_INT(4,  FILL_OX);
+    TEST_ASSERT_EQUAL_INT(5,  POST_PRESSURIZE);
+    TEST_ASSERT_EQUAL_INT(6,  ARMED);
+    TEST_ASSERT_EQUAL_INT(7,  IGNITION);
+    TEST_ASSERT_EQUAL_INT(8,  LAUNCH);
+    TEST_ASSERT_EQUAL_INT(9,  BOOST);
+    TEST_ASSERT_EQUAL_INT(10, COAST);
+    TEST_ASSERT_EQUAL_INT(11, DROGUE_DESCENT);
+    TEST_ASSERT_EQUAL_INT(12, MAIN_DESCENT);
+    TEST_ASSERT_EQUAL_INT(13, TOUCHDOWN);
+    TEST_ASSERT_EQUAL_INT(14, _STATE_COUNT);
 }
 
 /* ------------------------------------------------------------------ */
@@ -417,15 +431,6 @@ static void test_rc_end_state_resets_on_next_byte(void)
     TEST_ASSERT_EQUAL_INT(RC_SYNC, st);
 }
 
-/* ------------------------------------------------------------------ */
-/* rc_states.h (shared state enum, not CORTEX-specific RocketState)   */
-/* ------------------------------------------------------------------ */
-static void test_shared_state_enum_count(void)
-{
-    TEST_ASSERT_EQUAL_INT(14, state_count);
-    TEST_ASSERT_EQUAL_INT(-1, S_NONE);
-}
-
 int main(int argc, char **argv)
 {
     (void)argc;
@@ -437,8 +442,7 @@ int main(int argc, char **argv)
     RUN_TEST(test_manual_command_values_pinned);
     RUN_TEST(test_board_ids_pinned);
     RUN_TEST(test_board_id_aliases);
-    RUN_TEST(test_state_values_pinned);
-    RUN_TEST(test_shared_state_enum_count);
+    RUN_TEST(test_rocket_state_values_pinned);
 
     /* Wire format constants */
     RUN_TEST(test_frame_size_constants);

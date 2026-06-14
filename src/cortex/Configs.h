@@ -9,7 +9,7 @@
 #define RS485_BAUD_RATE 115200
 
 // RS485 timeout configuration (ms)
-#define RS485_RESPONSE_TIMEOUT_MS 8
+#define RS485_RESPONSE_TIMEOUT_MS 50
 
 // RS485 polling interval (ms)
 #define STATUS_POLL_INTERVAL_MS 20

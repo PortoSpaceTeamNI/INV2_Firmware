@@ -1,0 +1,3 @@
+Try higher baud rates - recommended 460800 / 921600
+Unify baud rates into a single config file.
+Replace Serial with what each Serial is (Serial = USB_Serial, Serial1 = RS485, Serial2 = Debug, etc.)

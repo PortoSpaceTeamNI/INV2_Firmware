@@ -25,7 +25,7 @@
 #include "rc_packet.h"
 #include "rc_parser.h"
 
-#define RS485_TIMEOUT_TIME_MS 15 // try to get limit bounds
+#define RS485_TIMEOUT_TIME_MS 100 // mid-frame timeout; max frame ~14 ms at 115200, 100 ms gives safe headroom
 
 // Largest fully-serialized frame on the wire (sync..crc), from rc_packet.h.
 #define MAX_PACKET_SIZE MAX_FRAME_SIZE

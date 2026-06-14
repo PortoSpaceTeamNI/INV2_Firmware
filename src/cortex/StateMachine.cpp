@@ -1,5 +1,9 @@
 #include "StateMachine.h"
 #include "DataPolling.h"
+#include "ValveRouting.h"
+#include "Communications.h"
+#include "Commands.h"
+#include "Configs.h"
 #include <Arduino.h>
 #include <FreeRTOS.h>
 #include <semphr.h>
@@ -12,6 +16,23 @@ extern SemaphoreHandle_t rocketDataMutex;
 extern SemaphoreHandle_t stateMachineConfigsMutex;
 
 StateMachineConfigs stateMachineConfigs; // TODO: Load from flash or set via command
+
+static void sendValveCmd(valve_t valve, uint8_t state)
+{
+    ValveRoute route;
+    if (getValveRoute(valve, &route) != 0) return;
+    packet_t pkt;
+    uint8_t pl[3] = { CMD_MANUAL_VALVE_STATE, route.hydraValve, state };
+    create_packet(&pkt, CORTEX_ID, route.hydraId, CMD_MANUAL_EXEC, pl, 3);
+    xQueueSend(ManualCommandQueue, &pkt, 0);
+}
+
+static void closeAllValves()
+{
+    for (int v = 0; v < (int)valve_count; v++) {
+        sendValveCmd((valve_t)v, VALVE_CLOSED);
+    }
+}
 
 RocketState updateState(RocketState currentState, RocketEvent event)
 {
@@ -32,38 +53,47 @@ int performStateRun(RocketState currentState, StateMachineConfigs *configs, Rock
   case FILL_N2:
     // For now does nothing
     break;
-  case PRE_PRESSURIZE: // Does not open valve, just closes it when threshold is reached
+  case PRE_PRESSURIZE: // Close pressurizing valve once target pressure is reached
     if (data->hydraUFData.tank_top_pressure >= configs->pre_pressurizing_pressure)
     {
       if (data->hydraUFData.valve_pressurizing == VALVE_OPEN)
       {
-        // Close all valves
+        sendValveCmd(VALVE_PRESSURIZING, VALVE_CLOSED);
       }
     }
     break;
-  case FILL_OX: // Does not open fill valve, just controls venting and stops filling if temperature is too low
+  case FILL_OX: // Vent control; close fill valve if temperature drops too low
     if (data->hydraLFData.probe_temperature_2 < configs->ox_fill_temperature)
     {
-      // Close all valves
+      if (data->hydraFSData.valve_ox_fill == VALVE_OPEN)
+      {
+        sendValveCmd(VALVE_N2O_FILL, VALVE_CLOSED);
+      }
     }
     else
     {
       if (data->hydraUFData.tank_top_pressure >= configs->ox_fill_pressure)
       {
-        // Open vent valve (without closing fill valve)
+        if (data->hydraUFData.valve_vent == VALVE_CLOSED)
+          sendValveCmd(VALVE_VENT, VALVE_OPEN);
       }
       else
       {
-        // Close vent valve (without closing fill valve)
+        if (data->hydraUFData.valve_vent == VALVE_OPEN)
+          sendValveCmd(VALVE_VENT, VALVE_CLOSED);
       }
     }
     break;
-  case POST_PRESSURIZE: // Opens and closes pressurizing valve to maintain pressure
+  case POST_PRESSURIZE: // Bang-bang control on pressurizing valve to maintain pressure
     if (data->hydraUFData.tank_top_pressure >= configs->post_pressurizing_pressure)
     {
-      // Close pressurizing valve
-    } else {
-      // Open pressurizing valve
+      if (data->hydraUFData.valve_pressurizing == VALVE_OPEN)
+        sendValveCmd(VALVE_PRESSURIZING, VALVE_CLOSED);
+    }
+    else
+    {
+      if (data->hydraUFData.valve_pressurizing == VALVE_CLOSED)
+        sendValveCmd(VALVE_PRESSURIZING, VALVE_OPEN);
     }
     break;
   case ARMED:
@@ -139,52 +169,50 @@ int performStateEntry(RocketState currentState, StateMachineConfigs *configs, Ro
   switch (currentState)
   {
   case IDLE:
-    // Close all valves
+    closeAllValves();
     break;
   case ABORT:
-    // Open abort valve and close all other valves
+    closeAllValves();
+    sendValveCmd(VALVE_ABORT, VALVE_OPEN);
     break;
   case FILL_N2:
-    // Open N2 fill valve
+    closeAllValves();
+    sendValveCmd(VALVE_N2_FILL, VALVE_OPEN);
     break;
   case PRE_PRESSURIZE:
-    if(data->hydraUFData.tank_top_pressure < configs->pre_pressurizing_pressure) {
-      // Open pressurizing valve
+    if (data->hydraUFData.tank_top_pressure < configs->pre_pressurizing_pressure) {
+      sendValveCmd(VALVE_PRESSURIZING, VALVE_OPEN);
     }
     break;
   case FILL_OX:
-    if(data->hydraLFData.probe_temperature_2 >= configs->ox_fill_temperature) {
-      // Open OX fill valve
+    if (data->hydraLFData.probe_temperature_2 >= configs->ox_fill_temperature) {
+      sendValveCmd(VALVE_N2O_FILL, VALVE_OPEN);
     }
     break;
   case POST_PRESSURIZE:
-    if(data->hydraUFData.tank_top_pressure < configs->post_pressurizing_pressure) {
-      // Open pressurizing valve
+    if (data->hydraUFData.tank_top_pressure < configs->post_pressurizing_pressure) {
+      sendValveCmd(VALVE_PRESSURIZING, VALVE_OPEN);
     }
     break;
   case ARMED:
-    // On entry does nothing
     break;
   case IGNITION:
-    // On entry does nothing
     break;
   case LAUNCH:
-    // Open main valve
+    sendValveCmd(VALVE_MAIN, VALVE_OPEN);
     break;
   case BOOST:
-    // On entry does nothing
     break;
   case COAST:
-    // Close main valve
+    sendValveCmd(VALVE_MAIN, VALVE_CLOSED);
     break;
   case DROGUE_DESCENT:
-    // Deploy drogue chute
+    // TODO: trigger drogue ematch
     break;
   case MAIN_DESCENT:
-    // Deploy main chute
+    // TODO: trigger main ematch
     break;
   case TOUCHDOWN:
-    // On entry does nothing
     break;
   default:
     return -1; // Invalid state

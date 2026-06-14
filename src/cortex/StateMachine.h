@@ -19,7 +19,7 @@ struct StateMachineConfigs {
     uint16_t n2_fill_pressure = 20000; // max
     uint16_t pre_pressurizing_pressure = 2300; // max
     uint16_t ox_fill_pressure = 2500; // max
-    uint16_t ox_fill_temperature = -2000; // min
+    int16_t  ox_fill_temperature = -2000; // min (-20.00 °C)
     uint16_t post_pressurizing_pressure = 5000; // max
 
     // Arming thresholds

@@ -60,10 +60,13 @@ void vRS485Task(void *pvParameters)
     {
       if (millis() - waitingStartTime > RS485_RESPONSE_TIMEOUT_MS)
       {
-        // Timeout occurred - clear waiting flag and allow next transmission
+        // Timeout: clear flag and signal DataPolling that no response arrived
         waitingForResponse = false;
 
-        // TODO: Send NACK to AcknowledgementQueue to indicate timeout error
+        packet_t nack;
+        uint8_t nack_pl[1] = {0};
+        create_packet(&nack, CORTEX_ID, BROADCAST_ID, CMD_NACK, nack_pl, 0);
+        xQueueSend(AcknowledgementQueue, &nack, 0);
       }
       // Read if data is available on RS485
       packet_t *receivedPacket = read_packet(&error, RS485_INTERFACE);
