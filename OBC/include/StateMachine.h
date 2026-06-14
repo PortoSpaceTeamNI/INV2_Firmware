@@ -52,7 +52,7 @@ typedef struct
 } sm_state_t;
 
 extern sm_state_t state; 
-extern state_t expected_state[state_count][cmd_size]; //save transition state for communication
+extern state_t expected_state[state_count][CMD_COUNT]; //save transition state for communication
 extern sm_state_t state_machine[state_count]; 
 
 

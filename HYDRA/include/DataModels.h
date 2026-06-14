@@ -4,6 +4,11 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+// Command + manual sub-command sets come from the shared core so every board
+// agrees on the on-the-wire numbering (lib/rocket_core).
+#include "rc_commands.h"
+#include "rc_manual.h"
+
 typedef enum
 {
     HYDRA_UF = 1,
@@ -11,32 +16,6 @@ typedef enum
     HYDRA_FS,
     hydra_id_count,
 } hydra_id_t;
-
-typedef enum
-{
-    CMD_NONE = 0,
-    CMD_STATUS,
-    CMD_ABORT,
-    CMD_STOP,
-    CMD_ARM,
-    CMD_FIRE,
-    CMD_FILL_EXEC,
-    CMD_MANUAL_EXEC,
-    CMD_ACK,
-    CMD_NACK,
-    cmd_count,
-} command_t;
-
-// Manual commands
-typedef enum
-{
-    CMD_MANUAL_SD_LOG_START,
-    CMD_MANUAL_SD_LOG_STOP,
-    CMD_MANUAL_SD_STATUS,
-    CMD_MANUAL_VALVE_STATE,
-    CMD_MANUAL_VALVE_MS, // milliseconds to open/close valve
-    manual_cmd_count,
-} manual_command_t;
 
 typedef enum
 {

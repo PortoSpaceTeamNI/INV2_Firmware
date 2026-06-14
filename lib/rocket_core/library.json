@@ -1,0 +1,11 @@
+{
+  "name": "rocket_core",
+  "version": "0.1.0",
+  "description": "Shared INV2 protocol core: frame definition, byte parser/serializer, board IDs, canonical command and state enums. Target-agnostic (host-testable).",
+  "keywords": ["inv2", "protocol", "rs485"],
+  "frameworks": "*",
+  "platforms": "*",
+  "build": {
+    "libArchive": false
+  }
+}

@@ -37,7 +37,7 @@ int update_data_from_lift(lift_t *lift, system_data_t *system_data)
     return 0;
 }
 
-int send_lift_command(lift_t *lift, lift_cmd_t cmd, uint8_t payload[], uint8_t payload_size)
+int send_lift_command(lift_t *lift, command_t cmd, uint8_t payload[], uint8_t payload_size)
 {
     if (lift)
     {
@@ -63,7 +63,7 @@ int fetch_next_lift(lift_t lifts[], system_data_t *system_data)
 {
     if (lifts && system_data)
     {
-        int result = send_lift_command(&lifts[current_lift], LCMD_STATUS, NULL, 0);
+        int result = send_lift_command(&lifts[current_lift], CMD_STATUS, NULL, 0);
         
         if (result == 0)
         {
@@ -96,11 +96,11 @@ int parse_lift_response(lift_t lifts[], packet_t *packet, system_data_t *system_
         }
 
         int index = 0;
-        if (packet->cmd == LCMD_ACK)
+        if (packet->cmd == CMD_ACK)
         {
             switch (packet->payload[index++])
             {
-                case LCMD_STATUS:
+                case CMD_STATUS:
                     if (packet->payload_size < sizeof(loadcells_t) + 1) // Minimum size check
                         return -1;
                     memcpy(&lift->data, &packet->payload[index], sizeof(loadcells_t));

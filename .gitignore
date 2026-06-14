@@ -8,3 +8,9 @@
 *.autosave
 *.class
 *.java
+
+# PlatformIO build output (root monorepo project + per-board projects)
+.pio
+
+# ...but the shared library manifest must stay tracked despite *.json above
+!lib/rocket_core/library.json

@@ -4,20 +4,8 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-typedef enum
-{
-    CMD_NONE = 0,
-    CMD_STATUS,
-    CMD_ABORT,
-    CMD_STOP,
-    CMD_ARM,
-    CMD_FIRE,
-    CMD_FILL_EXEC,
-    CMD_MANUAL_EXEC,
-    CMD_ACK,
-    CMD_NACK,
-    cmd_count,
-} command_t;
+// Canonical command set shared across all boards (lib/rocket_core).
+#include "rc_commands.h"
 
 typedef union {
     struct {

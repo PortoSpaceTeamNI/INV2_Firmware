@@ -4,6 +4,12 @@
 #include <stdint.h>
 #include <Arduino.h>
 
+// Shared, board-agnostic command sets (single source of truth in lib/rocket_core).
+// OBC keeps its own state_t / valve_t / data unions below, but the wire command
+// numbering is now canonical across OBC, HYDRA and LIFT.
+#include "rc_commands.h"
+#include "rc_manual.h"
+
 //use the enum below as the values of state_t
 //use -1 for default behavior
 typedef enum 
@@ -28,25 +34,9 @@ typedef enum
 
 /*
     Commands
+    The top-level command_t and the CMD_MANUAL_* sub-commands now live in
+    lib/rocket_core (rc_commands.h / rc_manual.h), included above.
 */
-typedef enum
-{
-    // shared commands
-    CMD_NONE = 0,
-    CMD_STATUS,
-    CMD_ABORT,
-    CMD_STOP,
-    CMD_READY,
-    CMD_ARM,
-    CMD_FIRE,
-    CMD_LAUNCH_OVERRIDE,
-    CMD_FILL_EXEC,
-    CMD_FILL_RESUME,
-    CMD_MANUAL_EXEC,
-    CMD_ACK,
-    cmd_size,
-} cmd_type_t;
-
 typedef enum
 {
     CMD_FILL_NONE = 0,
@@ -56,17 +46,6 @@ typedef enum
     CMD_FILLING_N2O,
     CMD_POST_PRESSURE,
 } fill_cmd_t;
-
-typedef enum
-{
-    CMD_MANUAL_SD_LOG_START,
-    CMD_MANUAL_SD_LOG_STOP,
-    CMD_MANUAL_SD_STATUS,
-    CMD_MANUAL_VALVE_STATE,
-    CMD_MANUAL_VALVE_MS,
-    CMD_MANUAL_ACK,
-    manual_cmd_size,
-} manual_command_t;
 
 typedef enum
 {

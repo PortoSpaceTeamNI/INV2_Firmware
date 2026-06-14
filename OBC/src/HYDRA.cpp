@@ -61,11 +61,13 @@ int set_hydra_valve(hydra_t *hydra, hydra_valve_t valve, bool state)
 {
     if (hydra && valve < hydra_valve_count)
     {
-        // Set the valve state
-        uint8_t payload[2];
-        payload[0] = (uint8_t)(valve);
-        payload[1] = (uint8_t)(state);
-        send_hydra_command(hydra, HCMD_VALVE_SET, payload, 2);
+        // A valve set is a CMD_MANUAL_EXEC whose first payload byte selects the
+        // manual sub-command. Matches HYDRA's run_command() handler.
+        uint8_t payload[3];
+        payload[0] = (uint8_t)CMD_MANUAL_VALVE_STATE;
+        payload[1] = (uint8_t)valve;
+        payload[2] = (uint8_t)state;
+        send_hydra_command(hydra, CMD_MANUAL_EXEC, payload, 3);
         return 0;
     }
     return -1;
@@ -77,17 +79,21 @@ int set_hydra_valve_ms(hydra_t *hydra, hydra_valve_t valve, uint16_t ms)
     {
         if (ms <= 0 || ms > 60000) // Limit to 60 seconds
             return -1;
-        uint8_t payload[3];
-        payload[0] = (uint8_t)valve;
-        payload[1] = (ms >> 8) & 0xFF;
-        payload[2] = ms & 0xFF;
-        send_hydra_command(hydra, HCMD_VALVE_MS, payload, 3);
+        // payload: [VALVE_MS, valve, state, ms]. NOTE: HYDRA currently reads `ms`
+        // as a single byte (see HYDRA/src/main.cpp TODO); values > 255 are
+        // truncated on the receiver until that handler is widened to 2 bytes.
+        uint8_t payload[4];
+        payload[0] = (uint8_t)CMD_MANUAL_VALVE_MS;
+        payload[1] = (uint8_t)valve;
+        payload[2] = (uint8_t)true; // open for the duration, then close
+        payload[3] = (uint8_t)(ms & 0xFF);
+        send_hydra_command(hydra, CMD_MANUAL_EXEC, payload, 4);
         return 0;
     }
     return -1;
 }
 
-int send_hydra_command(hydra_t *hydra, hydra_cmd_t cmd, uint8_t payload[], uint8_t payload_size)
+int send_hydra_command(hydra_t *hydra, command_t cmd, uint8_t payload[], uint8_t payload_size)
 {
     if (hydra)
     {
@@ -129,19 +135,18 @@ int parse_hydra_response(hydra_t hydras[], packet_t *packet, system_data_t *syst
         }
 
         int index = 0;
-        if (packet->cmd == HCMD_ACK)
+        if (packet->cmd == CMD_ACK)
         {
             switch (packet->payload[index++])
             {
-            case HCMD_STATUS:
+            case CMD_STATUS:
                 if (packet->payload_size < sizeof(hydra_data_t) + 1) // Minimum size check
                     return -1;
                 memcpy(&hydra->data, &packet->payload[index], sizeof(hydra_data_t));
                 update_data_from_hydra(hydra, system_data);
                 return 0;
-            case HCMD_VALVE_SET:
-            case HCMD_VALVE_MS:
-                return 0; // Acknowledged
+            case CMD_MANUAL_EXEC:
+                return 0; // Acknowledged (valve set / valve-ms)
                 break;
             default:
                 return -1; // Unknown command in ACK
@@ -155,7 +160,7 @@ int fetch_next_hydra(hydra_t hydras[], system_data_t *system_data)
 {
     if (hydras && system_data)
     {
-        int result = send_hydra_command(&hydras[current_hydra], HCMD_STATUS, NULL, 0);
+        int result = send_hydra_command(&hydras[current_hydra], CMD_STATUS, NULL, 0);
         if (result == 0)
         {
             // Move to the next hydra in the sequence

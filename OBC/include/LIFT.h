@@ -15,13 +15,6 @@ typedef enum {
     lift_id_count,
 } lift_id_t;
 
-typedef enum {
-    LCMD_STATUS = 0,
-    LCMD_VALVE_SET,
-    LCMD_VALVE_MS,
-    LCMD_ACK,
-} lift_cmd_t;
-
 typedef struct {
     lift_id_t id;
     loadcells_t data;

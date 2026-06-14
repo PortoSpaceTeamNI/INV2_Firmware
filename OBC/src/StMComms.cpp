@@ -307,7 +307,7 @@ int run_command(packet_t *packet, state_t state, interface_t interface)
         break;
     default:
         // if the command has no action it still needs to return ok to change state
-        if (packet->cmd < cmd_size)
+        if (packet->cmd < CMD_COUNT)
         {
             if (packet->target_id == BROADCAST_ID)
             {
