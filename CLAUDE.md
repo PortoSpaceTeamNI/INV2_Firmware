@@ -131,8 +131,7 @@ valve index). Non-obvious mapping — this is the one place to change it.
 - CRC stubs (`check_crc()`) return `true` — harmless only because `CRC_ENABLED false`.
 - `src/hydra/VeryImportantFile.h` plays a MIDI tune on the buzzer. Not load-bearing.
 - `navigator` and `pocketsat` are not yet wired into the RS485 command bus.
-- Include order in LIFT: `rc_ids.h` must precede `HardwareCfg.h` because `HardwareCfg.h`
-  uses `LIFT_BOTTLE_ID` (from `rc_ids.h`) to define `MY_ID`.
+- `HardwareCfg.h` (LIFT) includes `rc_ids.h` directly — no include-order constraint needed.
 - Multi-byte wire fields are little-endian; use `memcpy` for unaligned reads (e.g. `uint16_t
   ms` in `CMD_MANUAL_VALVE_MS`).
 
